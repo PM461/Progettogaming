@@ -159,3 +159,4 @@ async def steam_callback(request: Request, account: str):
         "steamid": steamid,
         "giochi_aggiunti": giochi_aggiunti
     })
+    

@@ -139,3 +139,5 @@ async def sync_games(batch_size: int = 50, max_batches: int = 10, delay: float =
             await asyncio.sleep(delay)
 
     return {"status": "sync complete", "inserted": total_inserted}
+
+

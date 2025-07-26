@@ -1,25 +1,27 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException , Depends
 from datetime import datetime, timedelta
 import secrets
 import smtplib
+from jose import JWTError, jwt
+from pydantic import BaseModel
 import os
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
-# Aggiungi dopo le altre importazioni
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-router = APIRouter(tags=["Traditional Auth"])
-
-def hash_password(password: str):
-    return pwd_context.hash(password)
-# database.py
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from dotenv import load_dotenv
-
+# Aggiungi dopo le altre importazioni
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+router = APIRouter(tags=["Traditional Auth"])
+def hash_password(password: str):
+    return pwd_context.hash(password)
 load_dotenv()
 
+SECRET_KEY = os.getenv("SECRET_KEY")  
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES =  int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))  # <-- fix qui
 MONGO_URI = os.getenv("MONGO_URI")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["progetto_gaming"]
@@ -107,5 +109,46 @@ def send_password_reset_email(email: str, token: str):
         server.starttls()
         server.login(os.getenv("EMAIL_SENDER"), os.getenv("EMAIL_PASSWORD"))
         server.send_message(msg)
+        
+class DeleteAccountRequest(BaseModel):
+    email: str
+    password: str
 
+@router.delete("/delete-account")
+async def delete_account(email: str  , password : str):
+    user = await users_collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
 
+    if not verify_password(password, user["password"]):
+        raise HTTPException(status_code=401, detail="Password errata")
+
+    await users_collection.delete_one({"email": email})
+    return {"message": "Account eliminato con successo"}
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+@router.post("/login")
+async def login_json(data: LoginRequest):
+    user = await users_collection.find_one({"email": data.email})
+    if not user or not verify_password(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Credenziali non valide")
+
+    if not user.get("email_verified", False):
+        raise HTTPException(status_code=403, detail="Email non verificata")
+
+    access_token = create_access_token(data={"sub": user["email"]})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": str(user["_id"])  
+    }

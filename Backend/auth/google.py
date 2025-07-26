@@ -3,9 +3,13 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 from starlette.responses import RedirectResponse
 from pymongo import MongoClient
 from jose import jwt
+from fastapi.responses import HTMLResponse
 from datetime import datetime, timedelta
 import os
 import logging
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import JWTError
 from dotenv import load_dotenv
 
 # Carica le variabili d'ambiente
@@ -45,6 +49,8 @@ def create_access_token(data: dict):
 async def login(request: Request):
     try:
         redirect_uri = request.url_for('auth_callback')
+        print(f"Redirect URI: {redirect_uri}")
+
         return await oauth.google.authorize_redirect(request, redirect_uri)
     except Exception as e:
         logging.error(f"Login error: {str(e)}")
@@ -84,11 +90,17 @@ async def auth_callback(request: Request):
         # 5. Genera il nostro JWT
         access_token = create_access_token({"sub": user_data["email"]})
 
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": user_data
-        }
+        # HTML che invia il token alla finestra principale (Flutter Web)
+        html_content = f"""
+        <html>
+        <script>
+            window.opener.postMessage("access_token={access_token}", "*");
+            window.close();
+        </script>
+        <body>Login completato. Puoi chiudere questa finestra.</body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
 
     except OAuthError as e:
         logging.error(f"OAuth error: {str(e)}")
@@ -96,3 +108,29 @@ async def auth_callback(request: Request):
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")
+
+security = HTTPBearer()
+
+@router.get("/api/auth/me")
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("sub")
+        if user_email is None:
+            raise HTTPException(status_code=401, detail="Token non valido")
+
+        # Recupera utente dal DB
+        user = users_collection.find_one({"email": user_email})
+        if not user:
+            raise HTTPException(status_code=404, detail="Utente non trovato")
+
+        return {
+            "email": user["email"],
+            "name": user.get("name", ""),
+            "picture": user.get("picture", None),
+            "_id": str(user["_id"]),  # restituisci anche l'id come stringa
+        }
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token non valido")

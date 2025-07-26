@@ -4,6 +4,7 @@ from auth.auth import router as auth_router
 from games import wikidata , gestionegiochi
 from auth import google
 from Steam import access
+from fastapi.middleware.cors import CORSMiddleware
 from routes import users
 from starlette.middleware.sessions import SessionMiddleware
 import os
@@ -27,6 +28,23 @@ except Exception as e:
     raise
 
 app = FastAPI()
+origins = [
+    "http://localhost:3000",  # Cambia con l'URL del frontend Flutter web (porta e host)
+    "http://127.0.0.1:3000",
+    "http://localhost:62102",
+    "http://localhost:5173",
+    "http://localhost:64724",# Se fai frontend e backend su stessa porta
+    "http://127.0.0.1:8000",
+    # puoi aggiungere altri domini qui
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,      # Se vuoi permettere tutto, usa ["*"]
+    allow_credentials=True,
+    allow_methods=["*"],        # accetta tutti i metodi: GET, POST, OPTIONS...
+    allow_headers=["*"],        # accetta tutti gli headers
+)
 app.include_router(wikidata.router, prefix="/api/wikidata", tags=["wikidata"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(google.router)

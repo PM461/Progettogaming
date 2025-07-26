@@ -1,17 +1,43 @@
-from fastapi import APIRouter
+from fastapi import APIRouter , HTTPException
+
 from models import User
+import os
+from motor.motor_asyncio import AsyncIOMotorClient
+from bson import ObjectId
+
+MONGO_URI = os.getenv("MONGO_URI")
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["progetto_gaming"]
+
+# Definisci tutte le collections qui
+users_collection = db["users"]
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-# esempio: registrazione utente
-@router.post("/register")
-async def register(user: User):
-    # In una vera app, salveresti nel DB
-    return {"msg": f"Utente {user.email} registrato!"}
 
-# Simula login Google
-@router.post("/google-login")
-def google_login(user: User):
-    # In un'app vera qui salveresti su MongoDB, per ora stampa a console
-    print("Utente loggato con Google:", user.email)
-    return {"message": "Login Google simulato", "user": user}
+@router.get("/get-steamid")
+async def get_steamid(email: str):
+    user = await users_collection.find_one({"email": email}, {"_id": 0, "steam_id": 1})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    
+    if "steamid" in user:
+        return {"steamid": user["steam_id"]}
+    else:
+        return {"message": "SteamID non presente per questo utente"}
+
+@router.get("/get-nickname")
+async def get_nickname(user_id: str):
+    objid =ObjectId(user_id)
+    user = await users_collection.find_one({"_id": objid}, {"_id": 0, "name": 1})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    
+    if "name" in user:
+        print(user["name"])
+        return {"name": user["name"]}
+    else:
+        print("b")
+        return {"message": "Nickname non trovato per l'utente specificato"}

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:front_gaming/schermate/gamedetail.dart';
+import 'package:front_gaming/schermate/profilescreen.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/library': (context) => const MyLibraryScreen(),
         '/details': (context) => const Placeholder(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

@@ -3,6 +3,8 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from pymongo import MongoClient
 from urllib.parse import urlencode
 import re
+from fastapi.responses import HTMLResponse
+
 from bson import ObjectId
 import os
 from dotenv import load_dotenv
@@ -151,12 +153,42 @@ async def steam_callback(request: Request, account: str):
             "achievements": structured
         })
 
-    print("Player achievements for appid", appid)
-    print(player_ach)
+        print("Player achievements for appid", appid)
+        print(player_ach)
 
-    return JSONResponse(content={
-        "message": "Steam ID collegato e giochi sincronizzati con successo",
-        "steamid": steamid,
-        "giochi_aggiunti": giochi_aggiunti
-    })
+    # Pagina HTML che prova a chiudere la finestra
+    html_content = f"""
+    <html>
+      <head>
+        <title>Login completato</title>
+      </head>
+      <body>
+        <script>
+          window.close();
+          // Se non funziona chiudi, fai redirect a uno schema custom per Flutter
+          window.location.href = 'myapp://login-success?steamid={steamid}&account={account}';
+        </script>
+        <p>Login completato! Se la finestra non si chiude, chiudila manualmente.</p>
+      </body>
+    </html>
+    """
+
+    return HTMLResponse(content=html_content)
+    
+
+@router.get("/users/get-steamid")
+async def get_steamid(user_id: str = Query(...)):
+    try:
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID utente non valido")
+
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    steam_id = user.get("steam_id")
+    if not steam_id:
+        return {"steam_id": None, "message": "SteamID non presente"}
+
+    return {"steam_id": steam_id}
     

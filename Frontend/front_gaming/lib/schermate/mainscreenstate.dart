@@ -15,6 +15,7 @@ import 'package:front_gaming/services/image_services.dart';
 
 
 
+
 class MainScreenState extends State<MainScreen> {
   late Future<String> futureName;
 
@@ -22,6 +23,10 @@ class MainScreenState extends State<MainScreen> {
   List<dynamic> _searchResults = [];
   String _searchError = '';
   bool _isSearching = false;
+  String? _selectedImageName;
+  bool _hasLoadedOnce = false;
+
+
 
   @override
   void dispose() {
@@ -76,7 +81,61 @@ class MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     futureName = loadName();
+    _loadProfileImage();
+
   }
+
+  @override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+
+  if (ModalRoute.of(context)?.isCurrent == true && !_hasLoadedOnce) {
+    _loadProfileImage(); // solo al primo ingresso
+    _hasLoadedOnce = true;
+  } else if (ModalRoute.of(context)?.isCurrent == true) {
+    _loadProfileImage(); // ricarica se ritorni
+  }
+}
+
+
+Future<void> _loadProfileImage() async {
+  final prefs = await SharedPreferences.getInstance();
+  String? imageName = prefs.getString('profile_image');
+  final userId = prefs.getString('user_id');
+
+  if (imageName != null && imageName.isNotEmpty) {
+    // Se è già salvata localmente, la usiamo subito
+    setState(() {
+      _selectedImageName = imageName;
+    });
+  } else if (userId != null && userId.isNotEmpty) {
+    // Altrimenti proviamo a recuperarla dal server
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/users/get-propic?user_id=$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final index = int.tryParse(response.body);
+        if (index != null && index >= 0) {
+          imageName = '$index';
+          await prefs.setString('profile_image', imageName);
+          setState(() {
+            _selectedImageName = imageName;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Errore durante il fetch della propic: $e');
+    }
+  } else {
+    // Nessuna informazione disponibile, fallback su 1.png
+    setState(() {
+      _selectedImageName = '1';
+    });
+  }
+}
+
 
   Future<String> loadName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -94,43 +153,55 @@ class MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main Screen'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              await AuthService.logout();
-              if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
-              }
-            },
-          )
-        ],
+       appBar: AppBar(
+  title: SizedBox(
+    height: 40,
+    child: TextField(
+      controller: _searchController,
+      onChanged: (value) => searchGame(value),
+      decoration: InputDecoration(
+        hintText: 'Cerca un gioco...',
+        prefixIcon: const Icon(Icons.search),
+        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surfaceVariant,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
+      style: Theme.of(context).textTheme.bodyMedium,
+    ),
+  ),
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(right: 40),
+      child: GestureDetector(
+       onTap: () async {
+  await Navigator.pushNamed(context, '/profile');
+  _loadProfileImage(); 
+  // Ricarica quando torni dalla schermata del profilo
+},
+        child: CircleAvatar(
+          radius: 40,
+          
+          backgroundImage: AssetImage(
+            _selectedImageName != null
+                ? 'images/propic/${_selectedImageName!}.png'
+                : 'images/propic/1.png',
+                
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
+
+
       body: Column(
         children: [
           const SizedBox(height: 10),
-          Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  child: TextField(
-    controller: _searchController,
-    onChanged: (value) => searchGame(value),
-    decoration: InputDecoration(
-      labelText: 'Cerca un gioco...',
-      prefixIcon: const Icon(Icons.search),
-      filled: true,
-      fillColor: Theme.of(context).colorScheme.surfaceVariant,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-    ),
-    style: Theme.of(context).textTheme.bodyLarge,
-  ),
-),
           const SizedBox(height: 10),
           if (_isSearching) const CircularProgressIndicator(),
           if (_searchError.isNotEmpty)
@@ -144,7 +215,7 @@ class MainScreenState extends State<MainScreen> {
           if (_searchResults.isNotEmpty)
             Expanded(
               child: ListView.builder(
-                  itemCount: _searchResults.length,
+                  itemCount: _searchResults.length > 3 ? 3 : _searchResults.length,
                   itemBuilder: (context, index) {
                     final item = _searchResults[index];
                     return ListTile(

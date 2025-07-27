@@ -129,6 +129,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             "email": user["email"],
             "name": user.get("name", ""),
             "picture": user.get("picture", None),
+            "propic":0,
             "_id": str(user["_id"]),  # restituisci anche l'id come stringa
         }
 

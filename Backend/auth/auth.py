@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException , Depends
 from datetime import datetime, timedelta
 import secrets
+from datetime import datetime
+
 import smtplib
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -58,6 +60,8 @@ async def register(email: str, password: str, name: str ):
         "email": email,
         "password": hash_password(password),
         "name": name,
+        "propic":0,
+        "data": datetime.now().strftime("%d/%m/%Y"), 
         "email_verified": False,
         "verification_token": verification_token
     }

@@ -41,3 +41,71 @@ async def get_nickname(user_id: str):
     else:
         print("b")
         return {"message": "Nickname non trovato per l'utente specificato"}
+    
+@router.get("/get-propic")
+async def get_propic(user_id: str):
+    try:
+        objid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID utente non valido")
+
+    user = await users_collection.find_one({"_id": objid}, {"_id": 0, "propic": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    
+    if "propic" in user:
+        return {"propic": user["propic"]}
+    else:
+        return {"message": "Propic non trovata"}
+
+# ✅ Nuova rotta: Imposta la propic
+@router.get("/set-propic")
+async def set_propic(user_id: str, propic_url: str):
+    try:
+        objid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID utente non valido")
+
+    result = await users_collection.update_one(
+        {"_id": objid},
+        {"$set": {"propic": propic_url}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    return {"message": "Propic aggiornata con successo", "propic": propic_url}  
+
+@router.get("/get-email")
+async def get_email(user_id: str):
+    try:
+        objid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID utente non valido")
+
+    user = await users_collection.find_one({"_id": objid}, {"_id": 0, "email": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    if "email" in user:
+        return {"email": user["email"]}
+    else:
+        return {"message": "Email non trovata per l'utente specificato"}  
+    
+    
+    
+@router.get("/get-data")
+async def get_data(user_id: str):
+    try:
+        objid = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID utente non valido")
+
+    user = await users_collection.find_one({"_id": objid}, {"_id": 0, "data": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    if "data" in user:
+        return {"data": user["data"]}
+    else:
+        return {"message": "Data non trovata per l'utente specificato"}

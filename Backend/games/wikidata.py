@@ -2,7 +2,9 @@ from fastapi import APIRouter
 from pymongo import MongoClient
 from SPARQLWrapper import SPARQLWrapper, JSON
 from datetime import datetime
+import requests
 import asyncio
+import time
 
 router = APIRouter()
 
@@ -10,7 +12,8 @@ router = APIRouter()
 client = MongoClient("mongodb://localhost:27017")
 db = client["progetto_gaming"]
 collection = db["games"]
-
+company_collection = db["company"]
+LIMIT = 1000
 # SPARQL endpoint
 ENDPOINT = "https://query.wikidata.org/sparql"
 
@@ -140,4 +143,68 @@ async def sync_games(batch_size: int = 50, max_batches: int = 10, delay: float =
 
     return {"status": "sync complete", "inserted": total_inserted}
 
+def sparql_query(query: str):
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "WikidataSyncBot/1.0 (pakiitalia@gmail.com)"  # usa lo stesso User-Agent del resto del codice
+    }
+    response = requests.get(ENDPOINT, params={"query": query}, headers=headers)
+    response.raise_for_status()
+    return response.json()
 
+
+
+def get_aliases(qid: str):
+    query = f"""
+    SELECT ?alias WHERE {{
+      wd:{qid} skos:altLabel ?alias .
+      FILTER (LANG(?alias) = "en")
+    }}
+    """
+    data = sparql_query(query)
+    return [result["alias"]["value"] for result in data["results"]["bindings"]]
+
+@router.post("/import_companies")
+def import_companies():
+    offset = 0
+    total_imported = 0
+
+    while True:
+        query = f"""
+        SELECT ?company ?companyLabel ?logo WHERE {{
+          ?company wdt:P31/wdt:P279* wd:Q210167 .
+          OPTIONAL {{ ?company wdt:P154 ?logo. }}
+          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
+        }}
+        LIMIT {LIMIT}
+        OFFSET {offset}
+        """
+
+        data = sparql_query(query)
+        results = data["results"]["bindings"]
+
+        if not results:
+            break
+
+        for item in results:
+            company_uri = item["company"]["value"]
+            qid = company_uri.rsplit("/", 1)[-1]
+
+            label = item.get("companyLabel", {}).get("value", "")
+            logo = item.get("logo", {}).get("value", None)
+            aliases = get_aliases(qid)
+
+            doc = {
+                "_id": qid,
+                "label": label,
+                "aliases": aliases,
+                "logo": logo
+            }
+
+            company_collection.update_one({"_id": qid}, {"$set": doc}, upsert=True)
+            total_imported += 1
+
+        offset += LIMIT
+        time.sleep(1)  # per non sovraccaricare wikidata
+
+    return {"status": "success", "imported_companies": total_imported}

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:front_gaming/schermate/gamedetailscreen.dart';
+import 'package:front_gaming/services/image_services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,7 +11,7 @@ class Game {
   final String label;
   final String? logoImage;
   final List<dynamic> achievements;
-
+  
   final String? editore;
   final String? genere;
   final String? sviluppatore;
@@ -42,6 +44,7 @@ class Game {
     this.classificazioneUSK,
     this.idSteam,
     this.idGOG,
+    
   });
 
 factory Game.fromJson(Map<String, dynamic> json) {
@@ -69,6 +72,8 @@ factory Game.fromJson(Map<String, dynamic> json) {
 
 
 }
+
+
 
 List<String>? toStringOrNullList(dynamic val) {
   if (val == null) return null;
@@ -136,6 +141,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     super.initState();
     futureGames = fetchUserGames();
   }
+
 
   Future<List<Game>> fetchUserGames() async {
     final prefs = await SharedPreferences.getInstance();
@@ -207,7 +213,7 @@ Widget build(BuildContext context) {
                             child: game.logoImage != null
                                 ? Image.network(
                                     game.logoImage!,
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.contain,
                                   )
                                 : Container(
                                     color: Colors.grey.shade300,
@@ -256,127 +262,3 @@ Widget build(BuildContext context) {
 
 }
 
-class GameDetailScreen extends StatelessWidget {
-  final Game game;
-
-  const GameDetailScreen({required this.game, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget? row(String label, dynamic value) {
-      if (value == null || value.toString().toLowerCase() == 'n/a') {
-        return null; // Non mostrare niente
-      }
-
-      String text;
-      if (value is List<String>) {
-        text = value.join(', ');
-      } else if (value is DateTime) {
-        text = "${value.day}/${value.month}/${value.year}";
-      } else {
-        text = value.toString();
-      }
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: RichText(
-          text: TextSpan(
-            style: Theme.of(context).textTheme.bodyMedium,
-            children: [
-              TextSpan(
-                  text: '$label: ',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              TextSpan(text: text),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(title: Text(game.label)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          game.logoImage != null
-              ? Image.network(game.logoImage!)
-              : const Icon(Icons.videogame_asset, size: 100),
-          const SizedBox(height: 16),
-          ...[
-            row('Editore', game.editore),
-            row('Genere', game.genere),
-            row('Sviluppatore', game.sviluppatore),
-            row('Serie', game.serie),
-            row('Piattaforme', game.piattaforma),
-            row('Modalità', game.modalitaDiGioco),
-            row('Dispositivo', game.dispositivoIngresso),
-            row('Pubblicazione', game.dataPubblicazione),
-            row('Distributore', game.distributore),
-            row('Sito web', game.sitoWebUfficiale),
-            row('Classificazione USK', game.classificazioneUSK),
-            row('Steam ID', game.idSteam),
-            row('GOG ID', game.idGOG),
-          ].whereType<Widget>(), // rimuove i null!
-          const Divider(),
-          Text(
-              'Obiettivi completati: ${game.achievements.where((a) => a['achieved'] == true).length} / ${game.achievements.length}'),
-          const SizedBox(height: 16),
-
-          // Qui inseriamo la lista orizzontale degli achievements
-          SizedBox(
-  height: 120,
-  child: ListView.builder(
-    scrollDirection: Axis.horizontal,
-    itemCount: game.achievements.length,
-    itemBuilder: (context, index) {
-      final achievement = game.achievements[index];
-      final imageUrl = achievement['image'] ?? '';
-      final name = achievement['name'] ?? 'Senza nome';
-      final achieved = achievement['achieved'] == true;
-
-      return Container(
-        width: 100,
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: achieved ? Colors.green : Colors.grey,
-                    width: 3,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: imageUrl.isNotEmpty
-                      ? Image.network(imageUrl, fit: BoxFit.cover)
-                      : Icon(
-                          achieved ? Icons.check_circle : Icons.star_border,
-                          size: 60,
-                          color: achieved ? Colors.green : Colors.grey,
-                        ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      );
-    },
-  ),
-),
-
-        ],
-      ),
-    );
-  }
-}

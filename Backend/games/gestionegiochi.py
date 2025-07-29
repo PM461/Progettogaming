@@ -344,3 +344,136 @@ def toggle_achievement(user_id: str, game_id: str, achievement_index: int):
         "message": f"Achievement {achievement_index} del gioco {game_id} aggiornato.",
         "new_achieved_value": new_value
     }
+    
+
+class GameListRequest(BaseModel):
+    name: str
+    game_ids: List[str]
+
+@router.post("/user/{user_id}/create_list")
+def create_game_list(user_id: str, request: GameListRequest):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+    
+    user_obj_id = ObjectId(user_id)
+
+    # Verifica se l'utente esiste
+    user_doc = user_games_collection.find_one({"user_id": user_obj_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    # Aggiungi nuova lista
+    new_list = {
+        "name": request.name,
+        "game_ids": request.game_ids
+    }
+
+    result = user_games_collection.update_one(
+        {"user_id": user_obj_id},
+        {"$push": {"lists": new_list}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Errore durante la creazione della lista")
+
+    return {"message": f"Lista '{request.name}' creata con successo"}
+
+@router.get("/user/{user_id}/lists")
+def get_user_game_lists(user_id: str):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+    
+    user_obj_id = ObjectId(user_id)
+    user_doc = user_games_collection.find_one({"user_id": user_obj_id})
+
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    lists = user_doc.get("lists", [])
+    return {"lists": lists}
+
+@router.post("/user/{user_id}/remove_game_from_all_lists/{game_id}")
+def remove_game_from_all_lists(user_id: str, game_id: str):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+
+    user_obj_id = ObjectId(user_id)
+
+    result = user_games_collection.update_one(
+        {"user_id": user_obj_id},
+        {"$pull": {"lists.$[].game_ids": game_id}}
+    )
+
+    if result.modified_count == 0:
+        return {"message": "Il gioco non era presente in nessuna lista"}
+    
+    return {"message": "Gioco rimosso da tutte le liste"}
+
+class AddGameToListRequest(BaseModel):
+    name: str
+    game_id: str
+
+@router.post("/user/{user_id}/add_game_to_list")
+def add_game_to_list(user_id: str, data: AddGameToListRequest):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+
+    user_obj_id = ObjectId(user_id)
+    user_doc = user_games_collection.find_one({"user_id": user_obj_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    lists = user_doc.get("lists", [])
+
+    # Cerca la lista con il nome specificato
+    for game_list in lists:
+        if game_list["name"] == data.name:
+            if data.game_id not in game_list["game_ids"]:
+                game_list["game_ids"].append(data.game_id)
+            break
+    else:
+        # Se non esiste, creala
+        lists.append({
+            "name": data.name,
+            "game_ids": [data.game_id]
+        })
+
+    user_games_collection.update_one(
+        {"user_id": user_obj_id},
+        {"$set": {"lists": lists}}
+    )
+
+    return {"message": f"Gioco aggiunto alla lista '{data.name}'"}
+
+
+@router.post("/user/{user_id}/remove_game_from_list")
+def remove_game_from_list(user_id: str, list_name: str = Query(..., description="Nome della lista"), game_id: str = Query(..., description="ID del gioco da rimuovere")):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+
+    user_obj_id = ObjectId(user_id)
+    user_doc = user_games_collection.find_one({"user_id": user_obj_id})
+
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    lists = user_doc.get("lists", [])
+    found_list = False
+    for game_list in lists:
+        if game_list["name"] == list_name:
+            if game_id in game_list["game_ids"]:
+                game_list["game_ids"].remove(game_id)
+                found_list = True
+                break
+            else:
+                raise HTTPException(status_code=404, detail="Gioco non trovato nella lista specificata")
+
+    if not found_list:
+        raise HTTPException(status_code=404, detail="Lista non trovata")
+
+    user_games_collection.update_one(
+        {"user_id": user_obj_id},
+        {"$set": {"lists": lists}}
+    )
+
+    return {"message": f"Gioco rimosso dalla lista '{list_name}'"}

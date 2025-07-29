@@ -40,7 +40,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
         // Prendi nome sviluppatore con fallback sicuro
         final details = widget.game['details'] as Map<String, dynamic>? ?? {};
-        final developerName = details['sviluppatore'] ?? details['developer'] ?? '';
+        final developerName =
+            details['sviluppatore'] ?? details['developer'] ?? '';
         if (developerName.toString().isNotEmpty) {
           _fetchLogo(developerName.toString());
         }
@@ -52,6 +53,142 @@ class _GamedatascreenState extends State<Gamedatascreen> {
         }
       }
     });
+  }
+
+  Future<void> _showAddToListDialog() async {
+    if (userId == null) return;
+
+    final url = Uri.parse('http://127.0.0.1:8000/user/$userId/lists');
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Errore nel recupero delle liste.")),
+      );
+      return;
+    }
+
+    final data = json.decode(response.body);
+    final lists = data['lists'] as List<dynamic>? ?? [];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Seleziona una lista"),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: lists.length,
+              itemBuilder: (context, index) {
+                final list = lists[index];
+                return ListTile(
+                  title: Text(list['name']),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _addGameToLibraryIfNeeded();
+                    await _addGameToList(list['name']);
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCreateListDialog() {
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Crea nuova lista"),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: "Nome della lista"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final name = controller.text.trim();
+                if (name.isEmpty || userId == null) return;
+
+                Navigator.pop(context);
+                await _addGameToLibraryIfNeeded();
+
+                final url =
+                    Uri.parse("http://127.0.0.1:8000/user/$userId/create_list");
+                final response = await http.post(
+                  url,
+                  headers: {"Content-Type": "application/json"},
+                  body: json.encode({
+                    "name": name,
+                    "game_ids": [gameId]
+                  }),
+                );
+
+                if (response.statusCode == 200) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("Lista creata e gioco aggiunto!")),
+                  );
+                } else {
+                  final error = json.decode(response.body);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content:
+                            Text("Errore: ${error['detail'] ?? 'generico'}")),
+                  );
+                }
+              },
+              child: const Text("Crea"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _addGameToLibraryIfNeeded() async {
+    if (!isInLibrary && userId != null) {
+      final url =
+          Uri.parse('http://127.0.0.1:8000/user/$userId/add_game/$gameId');
+      final response = await http.post(url);
+      if (response.statusCode == 200) {
+        setState(() {
+          isInLibrary = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _addGameToList(String listName) async {
+    final url =
+        Uri.parse("http://127.0.0.1:8000/user/$userId/add_game_to_list");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: json.encode({
+        "name": listName,
+        "game_id": gameId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gioco aggiunto alla lista '$listName'")),
+      );
+    } else {
+      final error = json.decode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Errore: ${error['detail'] ?? 'generico'}")),
+      );
+    }
   }
 
   Future<void> _fetchLogo(String company) async {
@@ -155,12 +292,26 @@ class _GamedatascreenState extends State<Gamedatascreen> {
     final response = await (isInLibrary ? http.delete(url) : http.post(url));
 
     if (response.statusCode == 200) {
+      // Se rimuoviamo il gioco dalla libreria, rimuoviamolo anche da tutte le liste
+      if (isInLibrary) {
+        final cleanupUrl = Uri.parse(
+          'http://127.0.0.1:8000/user/$userId/remove_game_from_all_lists/$gameId',
+        );
+        final cleanupResponse = await http.post(cleanupUrl);
+
+        if (cleanupResponse.statusCode == 200) {
+          print("Rimosso anche da tutte le liste");
+        } else {
+          print("Errore nella rimozione da liste");
+        }
+      }
+
       setState(() => isInLibrary = !isInLibrary);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isInLibrary
               ? 'Gioco aggiunto alla collezione'
-              : 'Gioco rimosso dalla collezione'),
+              : 'Gioco rimosso dalla collezione e da tutte le liste'),
         ),
       );
     } else {
@@ -212,7 +363,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
             'Genere': details['genere'] ?? details['genre'],
             'Editore': details['editore'] ?? details['publisher'],
             'Data di pubblicazione': _formatDate(
-                details['data di pubblicazione'] ?? details['publication date']),
+                details['data di pubblicazione'] ??
+                    details['publication date']),
           }),
 
           // Sviluppatore con logo o testo
@@ -245,30 +397,68 @@ class _GamedatascreenState extends State<Gamedatascreen> {
           _buildSection("Serie e piattaforme", {
             'Serie': details['serie'] ?? details['part of the series'],
             'Piattaforma': details['piattaforma'] ?? details['platform'],
-            'Distributore': details['distributore'] ?? details['distributed by'],
+            'Distributore':
+                details['distributore'] ?? details['distributed by'],
           }),
           _buildSection("Altre info", {
-            'Modalità di gioco': details['modalità di gioco'] ?? details['game mode'],
+            'Modalità di gioco':
+                details['modalità di gioco'] ?? details['game mode'],
             'Nintendo eShop ID': details['identificativo Nintendo eShop'],
-            'Metacritic ID': details['identificativo Metacritic di un videogioco'],
+            'Metacritic ID':
+                details['identificativo Metacritic di un videogioco'],
           }),
         ],
       ),
       floatingActionButton: isLoading || userId == null
           ? FloatingActionButton(
-              backgroundColor: isInLibrary
-                  ? const Color.fromARGB(255, 154, 154, 154)
-                  : const Color.fromARGB(255, 156, 156, 156),
               onPressed: null,
-              child: Icon(isInLibrary ? Icons.remove : Icons.add),
+              backgroundColor: Colors.grey,
+              child: const Icon(Icons.more_vert),
             )
           : FloatingActionButton(
-              backgroundColor: isInLibrary ? Colors.green : Colors.blue,
-              onPressed: _toggleGameInLibrary,
-              tooltip:
-                  isInLibrary ? 'Rimuovi dalla collezione' : 'Aggiungi alla collezione',
-              child: Icon(isInLibrary ? Icons.remove : Icons.add),
+              onPressed: _showActionMenu,
+              child: const Icon(Icons.more_vert),
             ),
+    );
+  }
+
+  void _showActionMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: Icon(isInLibrary ? Icons.remove : Icons.library_add),
+                title: Text(isInLibrary
+                    ? "Rimuovi da libreria"
+                    : "Aggiungi a libreria"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _toggleGameInLibrary();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.playlist_add),
+                title: const Text("Aggiungi a lista"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddToListDialog();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.create_new_folder),
+                title: const Text("Crea nuova lista e aggiungi"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCreateListDialog();
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -277,7 +467,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
       final value = entry.value;
 
       // Se è editore e abbiamo il logo, mostra immagine
-      if ((entry.key == 'Editore' || entry.key == 'publisher') && value is String) {
+      if ((entry.key == 'Editore' || entry.key == 'publisher') &&
+          value is String) {
         final logoUrl = publisherLogos[value];
         if (logoUrl != null && logoUrl.isNotEmpty) {
           return Padding(

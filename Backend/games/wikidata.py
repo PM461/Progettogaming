@@ -208,3 +208,47 @@ def import_companies():
         time.sleep(1)  # per non sovraccaricare wikidata
 
     return {"status": "success", "imported_companies": total_imported}
+
+generi_collection = db["generi"]
+@router.post("/import_genres")
+def import_genres():
+    query = """
+    SELECT ?genre ?genreLabel WHERE {
+      ?genre wdt:P31/wdt:P279* wd:Q659563 .
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "it,en". }
+    }
+    ORDER BY ?genreLabel
+    """
+
+    data = sparql_query(query)
+    results = data["results"]["bindings"]
+
+    inserted_count = 0
+
+    for item in results:
+        uri = item["genre"]["value"]  # es. "http://www.wikidata.org/entity/Q12345"
+        qid = uri.rsplit("/", 1)[-1]
+        label = item["genreLabel"]["value"]
+
+        doc = {
+            "_id": qid,
+            "label": label,
+            "wikidata_uri": uri
+        }
+
+        generi_collection.update_one({"_id": qid}, {"$set": doc}, upsert=True)
+        inserted_count += 1
+
+    return {"status": "success", "imported_genres": inserted_count}
+
+@router.get("/genres")
+def get_all_genres():
+    genres_cursor = generi_collection.find({}, {"_id": 1, "label": 1, "wikidata_uri": 1})
+    genres = []
+    for genre in genres_cursor:
+        genres.append({
+            "id": genre["_id"],
+            "label": genre["label"],
+            "wikidata_uri": genre.get("wikidata_uri")
+        })
+    return {"genres": genres}

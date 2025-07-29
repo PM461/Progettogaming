@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:front_gaming/services/profile_service.dart';
+import 'package:front_gaming/controllers/profile_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
@@ -16,6 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _email;
   String? _creationDate;
   String? _steamId;
+  final ProfileController _controller = ProfileController(ProfileService());
 
   final List<String> availableImages = List.generate(6, (i) => '$i');
   String? userId;
@@ -32,110 +37,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  Future<void> _checkSteamLoginStatus() async {
-    if (userId == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'http://localhost:8000/api/users/get-steamid?user_id=$userId'),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final steamId = data['steam_id'] as String?;
-        if (steamId != null && steamId.isNotEmpty) {
-          await prefs.setString('steam_id', steamId);
-          setState(() {
-            _steamId = steamId;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Errore get-steamid: $e');
-    }
-  }
-
   Future<void> _loadSteamId() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // ✅ 1. Richiesta sempre al backend
-    if (userId != null) {
-      try {
-        final response = await http.get(
-          Uri.parse('http://localhost:8000/users/get-steamid?user_id=$userId'),
-        );
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final steamId = data['steam_id'] as String?;
-
-          if (steamId != null && steamId.isNotEmpty) {
-            // ✅ 2. Aggiorna shared prefs e stato
-            await prefs.setString('steam_id', steamId);
-            setState(() => _steamId = steamId);
-            return;
-          } else {
-            // 🟥 Se server non ha steam_id, rimuovi dalle shared
-            await prefs.remove('steam_id');
-            setState(() => _steamId = null);
-            return;
-          }
-        }
-      } catch (e) {
-        debugPrint('Errore get-steamid: $e');
-      }
-    }
-
-    // ⚠️ 3. Fallback in caso di errore di rete
-    final savedSteamId = prefs.getString('steam_id');
-    if (savedSteamId != null && savedSteamId.isNotEmpty) {
-      setState(() => _steamId = savedSteamId);
-    }
+    if (userId == null) return;
+    final steamId = await _controller.loadSteamId(userId!);
+    setState(() => _steamId = steamId);
   }
 
   Future<void> _loadCreationDate() async {
     if (userId == null) return;
-
-    try {
-      final response = await http.get(
-        Uri.parse('http://localhost:8000/api/users/get-data?user_id=$userId'),
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final date = data['data'] as String?;
-        if (date != null && date.isNotEmpty) {
-          setState(() => _creationDate = date);
-        }
-      }
-    } catch (e) {
-      debugPrint('Errore get-data: $e');
+    final date = await _controller.loadCreationDate(userId!);
+    if (date != null) {
+      setState(() => _creationDate = date);
     }
   }
 
   Future<void> _loadEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('email');
-    if (savedEmail != null) {
-      setState(() => _email = savedEmail);
-    }
-
-    if (userId != null) {
-      try {
-        final response = await http.get(
-          Uri.parse(
-              'http://localhost:8000/api/users/get-email?user_id=$userId'),
-        );
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final email = data['email'] as String?;
-          if (email != null && email.isNotEmpty) {
-            await prefs.setString('email', email);
-            setState(() => _email = email);
-          }
-        }
-      } catch (e) {
-        debugPrint('Errore get-email: $e');
-      }
+    if (userId == null) return;
+    final email = await _controller.loadEmail(userId!);
+    if (email != null) {
+      setState(() => _email = email);
     }
   }
 
@@ -145,81 +65,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadNickname() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('nickname');
-    if (saved != null) {
-      setState(() => _nickname = saved);
-    }
-
-    if (userId != null) {
-      try {
-        _loadUserId();
-        final response = await http.get(
-          Uri.parse(
-              'http://localhost:8000/api/users/get-nickname?user_id=$userId'),
-        );
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final nick = data['name'] as String?;
-          if (nick != null && nick.isNotEmpty) {
-            await prefs.setString('nickname', nick);
-            setState(() => _nickname = nick);
-          }
-        }
-      } catch (e) {
-        debugPrint('Errore get-nickname: $e');
-      }
+    if (userId == null) return;
+    final nickname = await _controller.loadNickname(userId!);
+    if (nickname != null) {
+      setState(() => _nickname = nickname);
     }
   }
 
   Future<void> _loadProfileImage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('profile_image');
-    if (saved != null) {
-      setState(() => _selectedImageName = saved);
-    }
-
-    if (userId != null) {
-      try {
-        final response = await http.get(
-          Uri.parse(
-              'http://localhost:8000/api/users/get-propic?user_id=$userId'),
-        );
-        if (response.statusCode == 200) {
-          final idx = int.tryParse(response.body);
-          if (idx != null && idx >= 0 && idx < availableImages.length) {
-            final name = availableImages[idx];
-            await prefs.setString('profile_image', name);
-            setState(() => _selectedImageName = name);
-          }
-        }
-      } catch (e) {
-        debugPrint('Errore get-propic: $e');
-      }
+    if (userId == null) return;
+    final imageName = await _controller.loadProfileImage(userId!);
+    if (imageName != null) {
+      setState(() => _selectedImageName = imageName);
     }
   }
 
   Future<void> _setProfileImage(String imageName) async {
-    final prefs = await SharedPreferences.getInstance();
-    final idx = availableImages.indexOf(imageName);
-    final propicUrl = '${idx + 1}.png';
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'http://localhost:8000/api/users/set-propic?user_id=$userId&propic_url=$propicUrl'),
-      );
-      if (response.statusCode == 200) {
-        await prefs.setString('profile_image', imageName);
-        setState(() => _selectedImageName = imageName);
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Errore nel salvataggio della foto')),
-        );
-      }
-    } catch (e) {
+    if (userId == null) return;
+
+    final success = await _controller.setProfileImage(userId!, imageName);
+    if (!mounted) return;
+
+    if (success) {
+      setState(() => _selectedImageName = imageName);
+      Navigator.pop(context);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Errore di rete')),
+        const SnackBar(content: Text('Errore nel salvataggio della foto')),
       );
     }
   }
@@ -228,6 +100,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString('profile_image');
     if (saved != null && mounted) {
+      setState(() => _selectedImageName = saved);
+    }
+    if (!mounted) return;
+
+    if (saved != null) {
       setState(() => _selectedImageName = saved);
     }
 
@@ -294,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : 'images/propic/1.png';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profilo')),
+      appBar: CustomAppBar(selectedImageName: _selectedImageName),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -336,20 +213,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                             final url =
                                 'http://localhost:8000/auth/steam/login?account=$account';
+                            final uri = Uri.parse(url);
 
-                            if (await canLaunch(url)) {
-                              await launch(
-                                url,
-                                webOnlyWindowName:
-                                    '_blank', // <-- importante per aprire nuova scheda
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.platformDefault,
+                                webOnlyWindowName: '_blank',
                               );
-
-                              // Qui NON puoi chiudere la scheda da Flutter Web!
-                              // Ma puoi aspettare e poi ricaricare lo steamId (vedi dopo)
-                              await Future.delayed(const Duration(seconds: 5));
-                              await _loadSteamId();
                             } else {
-                              // errore
+                              // gestione errore
                             }
                           }
                         : null,

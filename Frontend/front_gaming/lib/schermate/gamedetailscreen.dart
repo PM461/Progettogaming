@@ -23,37 +23,36 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     achievements = List<Map<String, dynamic>>.from(widget.game.achievements);
   }
 
-
   void showAchievementDialog(Map<String, dynamic> achievement) {
-  final achieved = achievement['achieved'] == true;
-  final imageUrl = achieved
-      ? (achievement['icon'] ?? '')
-      : (achievement['icongray'] ?? '');
-  final description = achievement['description'] ?? 'Nessuna descrizione disponibile';
-  final name = achievement['name'] ?? 'Obiettivo';
+    final achieved = achievement['achieved'] == true;
+    final imageUrl = achieved
+        ? (achievement['icon'] ?? '')
+        : (achievement['icongray'] ?? '');
+    final description =
+        achievement['description'] ?? 'Nessuna descrizione disponibile';
+    final name = achievement['name'] ?? 'Obiettivo';
 
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(name),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (imageUrl.isNotEmpty)
-            Image.network(imageUrl, height: 100),
-          const SizedBox(height: 12),
-          Text(description),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (imageUrl.isNotEmpty) Image.network(imageUrl, height: 100),
+            const SizedBox(height: 12),
+            Text(description),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Chiudi'),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Chiudi'),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   Future<void> toggleAchievement(int index) async {
     final prefs = await SharedPreferences.getInstance();
@@ -82,6 +81,39 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Errore aggiornamento")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Errore di rete")),
+      );
+    }
+  }
+
+  Future<void> _removeGameFromLibrary() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    if (userId == null || userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Utente non loggato")),
+      );
+      return;
+    }
+
+    final url = Uri.parse(
+        'http://localhost:8000/user/$userId/remove_game/${widget.game.gameId}');
+
+    try {
+      final response = await http.delete(url);
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Gioco rimosso dalla libreria")),
+        );
+        Navigator.of(context).pop(); // Torna indietro alla pagina precedente
+      } else {
+        final msg = jsonDecode(response.body)['detail'] ?? 'Errore sconosciuto';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Errore: $msg")),
         );
       }
     } catch (e) {
@@ -220,79 +252,80 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
               SizedBox(
                 height: 150,
                 child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: achievements.length,
-                    itemBuilder: (context, index) {
-                      final achievement = achievements[index];
-                      final name = achievement['name'] ?? 'Senza nome';
-                      final achieved = achievement['achieved'] == true;
-                      final imageUrl = achieved
-                          ? (achievement['icon'] ?? '')
-                          : (achievement['icongray'] ?? '');
+                  scrollDirection: Axis.horizontal,
+                  itemCount: achievements.length,
+                  itemBuilder: (context, index) {
+                    final achievement = achievements[index];
+                    final name = achievement['name'] ?? 'Senza nome';
+                    final achieved = achievement['achieved'] == true;
+                    final imageUrl = achieved
+                        ? (achievement['icon'] ?? '')
+                        : (achievement['icongray'] ?? '');
 
-                      return Container(
-                        width: 120,
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                    showAchievementDialog(achievement);
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color:
-                                          achieved ? Colors.green : Colors.grey,
-                                      width: 3,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
+                    return Container(
+                      width: 120,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                showAchievementDialog(achievement);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color:
+                                        achieved ? Colors.green : Colors.grey,
+                                    width: 3,
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: imageUrl.isNotEmpty
-                                        ? Image.network(imageUrl,
-                                            fit: BoxFit.contain)
-                                        : Icon(
-                                            achieved
-                                                ? Icons.check_circle
-                                                : Icons.star_border,
-                                            size: 60,
-                                            color: achieved
-                                                ? Colors.green
-                                                : Colors.grey,
-                                          ),
-                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: imageUrl.isNotEmpty
+                                      ? Image.network(imageUrl,
+                                          fit: BoxFit.contain)
+                                      : Icon(
+                                          achieved
+                                              ? Icons.check_circle
+                                              : Icons.star_border,
+                                          size: 60,
+                                          color: achieved
+                                              ? Colors.green
+                                              : Colors.grey,
+                                        ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          ElevatedButton(
+                            onPressed: () => toggleAchievement(index),
+                            child: Text(
+                              achieved
+                                  ? "Segna come non fatto"
+                                  : "Segna come fatto",
                             ),
-                            const SizedBox(height: 4),
-                            ElevatedButton(
-                              onPressed: () => toggleAchievement(index),
-                              child: Text(
-                                achieved
-                                    ? "Segna come non fatto"
-                                    : "Segna come fatto",
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size(100, 30),
-                                padding: EdgeInsets.zero,
-                                textStyle: const TextStyle(fontSize: 12),
-                              ),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(100, 30),
+                              padding: EdgeInsets.zero,
+                              textStyle: const TextStyle(fontSize: 12),
                             ),
-                          ],
-                        ),
-                      );
-                    }),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
 
               //  Padding finale
@@ -300,6 +333,13 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
             ],
           );
         },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _removeGameFromLibrary,
+        label: const Text("Rimuovi dalla libreria"),
+        icon: const Icon(Icons.delete),
+        backgroundColor: Colors.redAccent,
       ),
     );
   }

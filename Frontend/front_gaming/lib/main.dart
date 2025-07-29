@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:front_gaming/schermate/gamedetail.dart';
 import 'package:front_gaming/schermate/profilescreen.dart';
+import 'package:front_gaming/services/profile_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,17 +47,27 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
+  
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+String? _profileImageName;
+  Future<void> _loadProfileImage() async {
+    final imageName = await ProfileService.getProfileImageName();
+    setState(() {
+      _profileImageName = imageName;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _listenForToken();
     _checkLogin();
+    _loadProfileImage();
   }
 
   void _listenForToken() {
@@ -84,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: CustomAppBar(selectedImageName: _profileImageName),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

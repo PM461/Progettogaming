@@ -2,16 +2,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:front_gaming/schermate/gamedetailscreen.dart';
 import 'package:front_gaming/services/image_services.dart';
+import 'package:front_gaming/services/profile_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:front_gaming/schermate/custom_app_bar.dart';
 
 class Game {
   final String gameId;
   final String label;
   final String? logoImage;
   final List<dynamic> achievements;
-  
+
+  final bool isWishlist;
+  final bool isCompleted;
+  final bool isFavorite;
   final String? editore;
   final String? genere;
   final String? sviluppatore;
@@ -32,6 +36,9 @@ class Game {
     required this.logoImage,
     required this.achievements,
     this.editore,
+    this.isWishlist = false,
+    this.isCompleted = false,
+    this.isFavorite = false,
     this.genere,
     this.sviluppatore,
     this.serie,
@@ -44,36 +51,32 @@ class Game {
     this.classificazioneUSK,
     this.idSteam,
     this.idGOG,
-    
   });
 
-factory Game.fromJson(Map<String, dynamic> json) {
-  return Game(
-    gameId: toStringOrNull(json['game_id']) ?? 'Sconosciuto',
-    label: toStringOrNull(json['label']) ?? 'Sconosciuto',
-    logoImage: toStringOrNull(json['logo image']),
-    achievements: json['achievements'] ?? [],
-    editore: toStringOrNullList(json['editore'])?.join(', '),
-    genere: toStringOrNullList(json['genere'])?.join(', '),
-    sviluppatore: toStringOrNull(json['sviluppatore']),
-    serie: toStringOrNull(json['serie']),
-    piattaforma: toStringOrNullList(json['piattaforma']),
-    modalitaDiGioco: toStringOrNullList(json['modalità_di_gioco'])?.join(', '),
-    dispositivoIngresso:
-        toStringOrNullList(json['dispositivo_di_ingresso'])?.join(', '),
-    dataPubblicazione: parseDate(json['data_di_pubblicazione']),
-    distributore: toStringOrNullList(json['distributore']),
-    sitoWebUfficiale: toStringOrNull(json['sito_web_ufficiale']),
-    classificazioneUSK: toStringOrNull(json['classificazione_USK']),
-    idSteam: toStringOrNull(json['identificativo_Steam']),
-    idGOG: toStringOrNull(json['identificativo_GOG.com']),
-  );
+  factory Game.fromJson(Map<String, dynamic> json) {
+    return Game(
+      gameId: toStringOrNull(json['game_id']) ?? 'Sconosciuto',
+      label: toStringOrNull(json['label']) ?? 'Sconosciuto',
+      logoImage: toStringOrNull(json['logo image']),
+      achievements: json['achievements'] ?? [],
+      editore: toStringOrNullList(json['editore'])?.join(', '),
+      genere: toStringOrNullList(json['genere'])?.join(', '),
+      sviluppatore: toStringOrNull(json['sviluppatore']),
+      serie: toStringOrNull(json['serie']),
+      piattaforma: toStringOrNullList(json['piattaforma']),
+      modalitaDiGioco:
+          toStringOrNullList(json['modalità_di_gioco'])?.join(', '),
+      dispositivoIngresso:
+          toStringOrNullList(json['dispositivo_di_ingresso'])?.join(', '),
+      dataPubblicazione: parseDate(json['data_di_pubblicazione']),
+      distributore: toStringOrNullList(json['distributore']),
+      sitoWebUfficiale: toStringOrNull(json['sito_web_ufficiale']),
+      classificazioneUSK: toStringOrNull(json['classificazione_USK']),
+      idSteam: toStringOrNull(json['identificativo_Steam']),
+      idGOG: toStringOrNull(json['identificativo_GOG.com']),
+    );
+  }
 }
-
-
-}
-
-
 
 List<String>? toStringOrNullList(dynamic val) {
   if (val == null) return null;
@@ -125,7 +128,6 @@ DateTime? parseDate(dynamic val) {
   return null;
 }
 
-
 class MyLibraryScreen extends StatefulWidget {
   const MyLibraryScreen({super.key});
 
@@ -134,131 +136,265 @@ class MyLibraryScreen extends StatefulWidget {
 }
 
 class _MyLibraryScreenState extends State<MyLibraryScreen> {
-  late Future<List<Game>> futureGames;
+  late Future<Map<String, List<Game>>>
+      futureListsWithGames; // Map: listaNome -> listaGiochi
+  String? _profileImageName;
 
   @override
   void initState() {
     super.initState();
-    futureGames = fetchUserGames();
+    futureListsWithGames = fetchListsAndGames();
+    _loadProfileImage();
   }
 
+  Future<void> _loadProfileImage() async {
+    final imageName = await ProfileService.getProfileImageName();
+    setState(() {
+      _profileImageName = imageName;
+    });
+  }
 
-  Future<List<Game>> fetchUserGames() async {
+  Future<Map<String, List<Game>>> fetchListsAndGames() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('user_id');
-
     if (userId == null || userId.isEmpty) {
       throw Exception("ID utente non trovato");
     }
 
-    final url = Uri.parse('http://localhost:8000/user/$userId/games');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      List gamesJson = data['games'];
-
-      return gamesJson.map((json) => Game.fromJson(json)).toList();
-    } else {
+    // Chiamata per ottenere giochi
+    final gamesUrl = Uri.parse('http://localhost:8000/user/$userId/games');
+    final gamesResponse = await http.get(gamesUrl);
+    if (gamesResponse.statusCode != 200) {
       throw Exception("Errore nel recupero dei giochi");
+    }
+    final gamesData = jsonDecode(gamesResponse.body);
+    List<Game> allGames = (gamesData['games'] as List)
+        .map((json) => Game.fromJson(json))
+        .toList();
+
+    // Chiamata per ottenere liste
+    final listsUrl = Uri.parse('http://localhost:8000/user/$userId/lists');
+    final listsResponse = await http.get(listsUrl);
+    if (listsResponse.statusCode != 200) {
+      throw Exception("Errore nel recupero delle liste");
+    }
+    final listsData = jsonDecode(listsResponse.body);
+    List<dynamic> lists = listsData['lists'];
+
+    // Mappatura giochi per id per rapido accesso
+    Map<String, Game> gamesById = {
+      for (var game in allGames) game.gameId: game
+    };
+
+    // Costruzione mappa nome lista -> giochi
+    Map<String, List<Game>> listsWithGames = {};
+    for (var list in lists) {
+      String listName = list['name'] ?? 'Senza nome';
+      List<dynamic> gameIds = list['game_ids'] ?? [];
+
+      listsWithGames[listName] = gameIds
+          .map((id) => gamesById[id])
+          .whereType<Game>()
+          .toList(); // filtra null
+    }
+    // Aggiungiamo la sezione "Tutti i giochi"
+    listsWithGames = {
+      "Tutti i giochi": allGames,
+      ...listsWithGames,
+    };
+
+    return listsWithGames;
+  }
+
+  Future<void> _removeGameFromList(String gameId, String listName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    if (userId == null || userId.isEmpty) {
+      throw Exception("ID utente non trovato");
+    }
+
+    final url = Uri.parse(
+        'http://localhost:8000/user/$userId/remove_game_from_list?list_name=${Uri.encodeQueryComponent(listName)}&game_id=${Uri.encodeQueryComponent(gameId)}');
+
+    final response = await http.post(url);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          "Errore durante la rimozione del gioco dalla lista: ${response.body}");
     }
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(title: const Text('La mia libreria')),
-    body: FutureBuilder<List<Game>>(
-      future: futureGames,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text("Errore: ${snapshot.error}"));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("Nessun gioco trovato"));
-        }
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: CustomAppBar(selectedImageName: _profileImageName),
+      body: FutureBuilder<Map<String, List<Game>>>(
+        future: futureListsWithGames,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Errore: ${snapshot.error}"));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text("Nessuna lista trovata"));
+          }
 
-        final games = snapshot.data!;
-        return Container(  // <-- qui serve il return
-          margin: const EdgeInsets.symmetric(vertical: 20),
-          height: 320,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: games.length,
-            itemBuilder: (context, index) {
-              final game = games[index];
-              return Container(
-                width: 180,
-                margin: const EdgeInsets.symmetric(horizontal: 8),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GameDetailScreen(game: game),
-                      ),
-                    );
-                  },
-                  child: Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 4,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          flex: 16,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                            child: game.logoImage != null
-                                ? Image.network(
-                                    game.logoImage!,
-                                    fit: BoxFit.contain,
-                                  )
-                                : Container(
-                                    color: Colors.grey.shade300,
-                                    child: const Icon(
-                                      Icons.videogame_asset,
-                                      size: 60,
-                                      color: Colors.grey,
+          final listsWithGames = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: listsWithGames.entries.map((entry) {
+              final listName = entry.key;
+              final games = entry.value;
+
+              if (games.isEmpty) return const SizedBox.shrink();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    listName,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  GridView.count(
+                    crossAxisCount: 6,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 1 / 1.3,
+                    children: games.map((game) {
+                      return Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      GameDetailScreen(game: game),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(12)),
+                                      child: game.logoImage != null
+                                          ? Image.network(
+                                              game.logoImage!,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : Container(
+                                              color: Colors.grey.shade300,
+                                              child: const Icon(
+                                                  Icons.videogame_asset,
+                                                  size: 60,
+                                                  color: Colors.grey),
+                                            ),
                                     ),
                                   ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 9,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  game.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${game.achievements.length} obiettivi',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
+                                  Expanded(
+                                    flex: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            game.label,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${game.achievements.length} obiettivi',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+
+                          // Pulsante elimina solo se NON siamo nella lista "Tutti i giochi"
+                          if (listName != "Tutti i giochi")
+                            Positioned(
+                              bottom: 4,
+                              right: 4,
+                              child: IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () async {
+                                  // TODO: Implementa la logica di rimozione dalla lista
+                                  // Per esempio, mostra dialog di conferma e chiama API per rimuovere il gioco dalla lista
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Rimuovi gioco'),
+                                      content: Text(
+                                          'Sei sicuro di voler rimuovere "${game.label}" dalla lista "$listName"?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Annulla'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text('Rimuovi'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirmed == true) {
+                                    // Chiama la funzione per rimuovere il gioco dalla lista
+                                    await _removeGameFromList(
+                                        game.gameId, listName);
+
+                                    // Ricarica i dati per aggiornare la UI
+                                    setState(() {
+                                      futureListsWithGames =
+                                          fetchListsAndGames();
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                        ],
+                      );
+                    }).toList(),
                   ),
-                ),
+                  const SizedBox(height: 32),
+                ],
               );
-            },
-          ),
-        );
-      },
-    ),
-  );
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
 }
-
-}
-

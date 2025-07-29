@@ -1,2 +1,12 @@
 fastapi
 uvicorn[standard]
+python-dotenv
+motor
+pymongo
+passlib[bcrypt]
+python-jose
+requests
+email-validator
+SPARQLWrapper
+authlib
+starlette

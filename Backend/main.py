@@ -32,7 +32,7 @@ origins = [
     "http://localhost:3000",  # Cambia con l'URL del frontend Flutter web (porta e host)
     "http://127.0.0.1:3000",
     "http://localhost:62102",
-    "http://localhost:5173",
+    "htntp://localhost:5173",
     "http://localhost:64724",# Se fai frontend e backend su stessa porta
     "http://127.0.0.1:8000",
     # puoi aggiungere altri domini qui

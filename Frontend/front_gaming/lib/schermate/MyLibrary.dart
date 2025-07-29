@@ -163,7 +163,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
 
     // Chiamata per ottenere giochi
     final gamesUrl =
-        Uri.parse('https://my-flutter-web.onrender.com//user/$userId/games');
+        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/games');
     final gamesResponse = await http.get(gamesUrl);
     if (gamesResponse.statusCode != 200) {
       throw Exception("Errore nel recupero dei giochi");
@@ -175,7 +175,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
 
     // Chiamata per ottenere liste
     final listsUrl =
-        Uri.parse('https://my-flutter-web.onrender.com//user/$userId/lists');
+        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/lists');
     final listsResponse = await http.get(listsUrl);
     if (listsResponse.statusCode != 200) {
       throw Exception("Errore nel recupero delle liste");
@@ -216,7 +216,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     }
 
     final url = Uri.parse(
-        'https://my-flutter-web.onrender.com//user/$userId/remove_game_from_list?list_name=${Uri.encodeQueryComponent(listName)}&game_id=${Uri.encodeQueryComponent(gameId)}');
+        'https://my-backend-ucgu.onrender.com/user/$userId/remove_game_from_list?list_name=${Uri.encodeQueryComponent(listName)}&game_id=${Uri.encodeQueryComponent(gameId)}');
 
     final response = await http.post(url);
 

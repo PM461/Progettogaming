@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ProfileService {
   final String baseUrl;
 
-  ProfileService({this.baseUrl = 'https://my-flutter-web.onrender.com/'});
+  ProfileService({this.baseUrl = 'https://my-backend-ucgu.onrender.com'});
 
   Future<String?> getNickname(String userId) async {
     try {
@@ -99,7 +99,7 @@ class ProfileService {
       try {
         final response = await http.get(
           Uri.parse(
-              'https://my-flutter-web.onrender.com//api/users/get-propic?user_id=$userId'),
+              'https://my-backend-ucgu.onrender.com/api/users/get-propic?user_id=$userId'),
         );
 
         if (response.statusCode == 200) {

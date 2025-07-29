@@ -65,7 +65,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     }
 
     final url = Uri.parse(
-      "https://my-flutter-web.onrender.com//user/$userId/game/${widget.game.gameId}/achievement/$index/toggle_achieved",
+      "https://my-backend-ucgu.onrender.com/user/$userId/game/${widget.game.gameId}/achievement/$index/toggle_achieved",
     );
 
     try {
@@ -101,7 +101,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     }
 
     final url = Uri.parse(
-        'https://my-flutter-web.onrender.com//user/$userId/remove_game/${widget.game.gameId}');
+        'https://my-backend-ucgu.onrender.com/user/$userId/remove_game/${widget.game.gameId}');
 
     try {
       final response = await http.delete(url);
@@ -127,7 +127,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     if (name == null || name.isEmpty) return null;
 
     final uri = Uri.parse(
-        'https://my-flutter-web.onrender.com//company_logo?name=${Uri.encodeComponent(name)}');
+        'https://my-backend-ucgu.onrender.com/company_logo?name=${Uri.encodeComponent(name)}');
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {

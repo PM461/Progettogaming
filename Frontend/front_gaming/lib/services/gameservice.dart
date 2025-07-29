@@ -11,7 +11,7 @@ Future<List<Game>> fetchUserGames() async {
   if (userId == null) throw Exception("ID utente non trovato");
 
   final url =
-      Uri.parse('https://my-flutter-web.onrender.com//user/$userId/games');
+      Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/games');
   final response = await http.get(url);
 
   if (response.statusCode == 200) {

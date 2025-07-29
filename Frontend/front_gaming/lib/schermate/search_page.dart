@@ -68,7 +68,7 @@ class _SearchPageState extends State<SearchPage> {
   Future<void> _loadGeneri() async {
     try {
       final response = await http
-          .get(Uri.parse('https://my-flutter-web.onrender.com//genres'));
+          .get(Uri.parse('https://my-backend-ucgu.onrender.com/genres'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         // Presumo la risposta ha la forma: { "genres": [ { "id": "...", "label": "..." }, ... ] }
@@ -122,7 +122,7 @@ class _SearchPageState extends State<SearchPage> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://my-flutter-web.onrender.com//find_game?query=$query'),
+            'https://my-backend-ucgu.onrender.com/find_game?query=$query'),
         headers: {'Content-Type': 'application/json'},
       );
 

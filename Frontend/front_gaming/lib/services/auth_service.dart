@@ -74,7 +74,7 @@ class AuthService {
 
   // Login Google con popup e ascolto messaggi
   static Future<bool> googleLogin() async {
-    const redirectBase = "http://localhost:8000"; // Cambia se serve
+    const redirectBase = "https://my-backend-ucgu.onrender.com"; // Cambia se serve
     const loginUrl = "$redirectBase/auth/google/login";
 
     final completer = Completer<bool>();

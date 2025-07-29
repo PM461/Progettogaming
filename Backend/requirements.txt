@@ -11,3 +11,5 @@ SPARQLWrapper
 authlib
 starlette
 httpx
+itsdangerous
+

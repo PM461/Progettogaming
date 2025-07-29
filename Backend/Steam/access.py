@@ -10,7 +10,11 @@ import os
 from dotenv import load_dotenv
 import requests
 
-load_dotenv()
+
+load_dotenv()  # carica variabili da .env
+
+MONGO_URI = os.getenv("MONGO_URI")
+SERV = os.getenv("SERV")
 STEAM_KEY = os.getenv("STEAM_KEY")
 print("STEAM_KEY:", STEAM_KEY)
 
@@ -18,13 +22,13 @@ print("STEAM_KEY:", STEAM_KEY)
 router = APIRouter()
 
 # MongoDB Setup
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient(MONGO_URI)
 db = client["progetto_gaming"]
 accounts_collection = db["accounts"]  # Sostituisci con il nome corretto della collezione utenti
 
 # Steam OpenID config
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
-RETURN_TO = "http://localhost:8000/auth/steam/callback"  # Cambialo in produzione
+RETURN_TO = SERV +"auth/steam/callback"  # Cambialo in produzione
 
 def get_owned_games(steamid):
     url = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
@@ -64,7 +68,7 @@ async def steam_login(account: str = Query(...)):
         "openid.ns": "http://specs.openid.net/auth/2.0",
         "openid.mode": "checkid_setup",
         "openid.return_to": return_to_with_account,
-        "openid.realm": "http://localhost:8000/",  # Cambia in produzione
+        "openid.realm": SERV,  # Cambia in produzione
         "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
         "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
     }

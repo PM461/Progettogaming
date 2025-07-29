@@ -5,11 +5,17 @@ from datetime import datetime
 import requests
 import asyncio
 import time
+from dotenv import load_dotenv
+import os
+load_dotenv()  # carica variabili da .env
+
+MONGO_URI = os.getenv("MONGO_URI")
+
 
 router = APIRouter()
 
 # Mongo setup
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient(MONGO_URI)
 db = client["progetto_gaming"]
 collection = db["games"]
 company_collection = db["company"]

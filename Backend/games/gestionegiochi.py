@@ -5,13 +5,17 @@ from typing import List
 from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorClient
 import requests
+from dotenv import load_dotenv
+import os
+load_dotenv()  # carica variabili da .env
 
+MONGO_URI = os.getenv("MONGO_URI")
 
 
 router = APIRouter()
 
 # Mongo setup
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient(MONGO_URI)
 db = client["progetto_gaming"]
 user_games_collection = db["user_games"]  # Nome corretto
 games_collection = db["games"]
@@ -27,7 +31,7 @@ def is_valid_objectid(id: str) -> bool:
 
 # --- Aggiungi Gioco a un Utente ---
 
-client = MongoClient("mongodb://localhost:27017")
+client = MongoClient(MONGO_URI)
 db = client["progetto_gaming"]
 user_games_collection = db["user_games"]
 

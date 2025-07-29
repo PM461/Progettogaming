@@ -28,24 +28,16 @@ except Exception as e:
     raise
 
 app = FastAPI()
-origins = [
-    "http://localhost:3000",  # Cambia con l'URL del frontend Flutter web (porta e host)
-    "http://127.0.0.1:3000",
-    "http://localhost:62102",
-    "htntp://localhost:5173",
-    "http://localhost:64724",# Se fai frontend e backend su stessa porta
-    "https://my-backend-ucgu.onrender.com",
-    'https://my-backend-ucgu.onrender.com/',
-    # puoi aggiungere altri domini qui
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # Se vuoi permettere tutto, usa ["*"]
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],        # accetta tutti i metodi: GET, POST, OPTIONS...
-    allow_headers=["*"],        # accetta tutti gli headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+
+
 app.include_router(wikidata.router, prefix="/api/wikidata", tags=["wikidata"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(google.router)

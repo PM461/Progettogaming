@@ -59,7 +59,7 @@ class _GamedatascreenState extends State<Gamedatascreen> {
     if (userId == null) return;
 
     final url =
-        Uri.parse('https://my-flutter-web.onrender.com/user/$userId/lists');
+        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/lists');
     final response = await http.get(url);
 
     if (response.statusCode != 200) {

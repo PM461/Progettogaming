@@ -154,7 +154,7 @@ Future<String> getName(String uid) async {
 }
 
 Future<String> fetchUserName(String token) async {
-  final url = Uri.parse('http://localhost:8000/api/auth/me');
+  final url = Uri.parse('https://my-backend-ucgu.onrender.com/api/auth/me');
 
   final response = await http.get(
     url,
@@ -205,7 +205,7 @@ Future<String> getUserName({String? token, String? uid}) async {
 
 Future<Uint8List?> fetchPngFromSvgUrl(String svgUrl) async {
   final apiUrl =
-      'http://localhost:8001/convert_svg_to_png?url=${Uri.encodeComponent(svgUrl)}';
+      'https://my-backend-ucgu.onrender.com/convert_svg_to_png?url=${Uri.encodeComponent(svgUrl)}';
 
   try {
     final response = await http.get(Uri.parse(apiUrl));

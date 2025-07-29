@@ -34,7 +34,7 @@ origins = [
     "http://localhost:62102",
     "htntp://localhost:5173",
     "http://localhost:64724",# Se fai frontend e backend su stessa porta
-    "http://127.0.0.1:8000",
+    "https://my-flutter-web.onrender.com",
     'https://my-flutter-web.onrender.com/',
     # puoi aggiungere altri domini qui
 ]

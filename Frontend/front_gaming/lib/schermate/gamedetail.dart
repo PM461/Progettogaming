@@ -58,7 +58,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
   Future<void> _showAddToListDialog() async {
     if (userId == null) return;
 
-    final url = Uri.parse('http://127.0.0.1:8000/user/$userId/lists');
+    final url =
+        Uri.parse('https://my-flutter-web.onrender.com/user/$userId/lists');
     final response = await http.get(url);
 
     if (response.statusCode != 200) {
@@ -120,8 +121,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
                 Navigator.pop(context);
                 await _addGameToLibraryIfNeeded();
 
-                final url =
-                    Uri.parse("http://127.0.0.1:8000/user/$userId/create_list");
+                final url = Uri.parse(
+                    "https://my-flutter-web.onrender.com/user/$userId/create_list");
                 final response = await http.post(
                   url,
                   headers: {"Content-Type": "application/json"},
@@ -155,8 +156,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _addGameToLibraryIfNeeded() async {
     if (!isInLibrary && userId != null) {
-      final url =
-          Uri.parse('http://127.0.0.1:8000/user/$userId/add_game/$gameId');
+      final url = Uri.parse(
+          'https://my-flutter-web.onrender.com/user/$userId/add_game/$gameId');
       final response = await http.post(url);
       if (response.statusCode == 200) {
         setState(() {
@@ -167,8 +168,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
   }
 
   Future<void> _addGameToList(String listName) async {
-    final url =
-        Uri.parse("http://127.0.0.1:8000/user/$userId/add_game_to_list");
+    final url = Uri.parse(
+        "https://my-flutter-web.onrender.com/user/$userId/add_game_to_list");
 
     final response = await http.post(
       url,
@@ -193,7 +194,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _fetchLogo(String company) async {
     final encodedCompany = Uri.encodeComponent(company);
-    final apiUrl = 'http://127.0.0.1:8000/company_logo?name=$encodedCompany';
+    final apiUrl =
+        'https://my-flutter-web.onrender.com/company_logo?name=$encodedCompany';
     print('Fetching company logo for "$company" from $apiUrl');
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -223,7 +225,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _fetchPublisherLogo(String publisherName) async {
     final encodedName = Uri.encodeComponent(publisherName);
-    final apiUrl = 'http://127.0.0.1:8000/publisher_logo/$encodedName';
+    final apiUrl =
+        'https://my-flutter-web.onrender.com/publisher_logo/$encodedName';
     print('Fetching publisher logo for "$publisherName" from $apiUrl');
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -258,7 +261,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
       return;
     }
 
-    final url = Uri.parse('http://127.0.0.1:8000/user/$userId/games');
+    final url =
+        Uri.parse('https://my-flutter-web.onrender.com/user/$userId/games');
     print('Fetching from $url');
 
     final response = await http.get(url);
@@ -285,8 +289,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
     final url = Uri.parse(
       isInLibrary
-          ? 'http://127.0.0.1:8000/user/$userId/remove_game/$gameId'
-          : 'http://127.0.0.1:8000/user/$userId/add_game/$gameId',
+          ? 'https://my-flutter-web.onrender.com/user/$userId/remove_game/$gameId'
+          : 'https://my-flutter-web.onrender.com/user/$userId/add_game/$gameId',
     );
 
     final response = await (isInLibrary ? http.delete(url) : http.post(url));
@@ -295,7 +299,7 @@ class _GamedatascreenState extends State<Gamedatascreen> {
       // Se rimuoviamo il gioco dalla libreria, rimuoviamolo anche da tutte le liste
       if (isInLibrary) {
         final cleanupUrl = Uri.parse(
-          'http://127.0.0.1:8000/user/$userId/remove_game_from_all_lists/$gameId',
+          'https://my-flutter-web.onrender.com/user/$userId/remove_game_from_all_lists/$gameId',
         );
         final cleanupResponse = await http.post(cleanupUrl);
 

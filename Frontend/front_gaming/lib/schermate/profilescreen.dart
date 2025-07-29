@@ -212,7 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
 
                             final url =
-                                'http://localhost:8000/auth/steam/login?account=$account';
+                                'https://my-flutter-web.onrender.com//auth/steam/login?account=$account';
                             final uri = Uri.parse(url);
 
                             if (await canLaunchUrl(uri)) {

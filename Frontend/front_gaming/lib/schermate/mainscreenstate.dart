@@ -61,7 +61,7 @@ class MainScreenState extends State<MainScreen> {
       try {
         final response = await http.get(
           Uri.parse(
-              'http://localhost:8000/api/users/get-propic?user_id=$userId'),
+              'https://my-flutter-web.onrender.com//api/users/get-propic?user_id=$userId'),
         );
 
         if (response.statusCode == 200) {

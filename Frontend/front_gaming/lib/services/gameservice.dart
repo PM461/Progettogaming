@@ -4,15 +4,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:front_gaming/services/gameservice.dart';
 
-
-
 Future<List<Game>> fetchUserGames() async {
   final prefs = await SharedPreferences.getInstance();
   final userId = prefs.getString('user_id');
 
   if (userId == null) throw Exception("ID utente non trovato");
 
-  final url = Uri.parse('http://localhost:8000/user/$userId/games');
+  final url =
+      Uri.parse('https://my-flutter-web.onrender.com//user/$userId/games');
   final response = await http.get(url);
 
   if (response.statusCode == 200) {

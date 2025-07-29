@@ -6,11 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ProfileService {
   final String baseUrl;
 
-  ProfileService({this.baseUrl = 'http://localhost:8000'});
+  ProfileService({this.baseUrl = 'https://my-flutter-web.onrender.com/'});
 
   Future<String?> getNickname(String userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/users/get-nickname?user_id=$userId'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/users/get-nickname?user_id=$userId'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['name'] as String?;
@@ -23,7 +24,8 @@ class ProfileService {
 
   Future<String?> getEmail(String userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/users/get-email?user_id=$userId'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/users/get-email?user_id=$userId'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['email'] as String?;
@@ -36,7 +38,8 @@ class ProfileService {
 
   Future<String?> getCreationDate(String userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/users/get-data?user_id=$userId'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/users/get-data?user_id=$userId'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['data'] as String?;
@@ -49,7 +52,8 @@ class ProfileService {
 
   Future<String?> getSteamId(String userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/users/get-steamid?user_id=$userId'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/users/get-steamid?user_id=$userId'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['steam_id'] as String?;
@@ -62,7 +66,8 @@ class ProfileService {
 
   Future<int?> getProfileImageIndex(String userId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/users/get-propic?user_id=$userId'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/api/users/get-propic?user_id=$userId'));
       if (response.statusCode == 200) {
         return int.tryParse(response.body);
       }
@@ -74,14 +79,14 @@ class ProfileService {
 
   Future<bool> setProfileImage(String userId, String imageUrl) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/api/users/set-propic?user_id=$userId&propic_url=$imageUrl'));
+      final response = await http.get(Uri.parse(
+          '$baseUrl/api/users/set-propic?user_id=$userId&propic_url=$imageUrl'));
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Errore set-propic: $e');
       return false;
     }
   }
-
 
   static Future<String> getProfileImageName() async {
     final prefs = await SharedPreferences.getInstance();
@@ -93,7 +98,8 @@ class ProfileService {
     } else if (userId != null && userId.isNotEmpty) {
       try {
         final response = await http.get(
-          Uri.parse('http://localhost:8000/api/users/get-propic?user_id=$userId'),
+          Uri.parse(
+              'https://my-flutter-web.onrender.com//api/users/get-propic?user_id=$userId'),
         );
 
         if (response.statusCode == 200) {

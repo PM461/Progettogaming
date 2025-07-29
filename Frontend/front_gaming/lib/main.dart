@@ -47,14 +47,13 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
-  
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-String? _profileImageName;
+  String? _profileImageName;
   Future<void> _loadProfileImage() async {
     final imageName = await ProfileService.getProfileImageName();
     setState(() {
@@ -127,8 +126,8 @@ class MainScreen extends StatefulWidget {
 }
 
 Future<String> getName(String uid) async {
-  final url =
-      Uri.parse('http://localhost:8000/api/users/get-nickname?user_id=$uid');
+  final url = Uri.parse(
+      'https://my-flutter-web.onrender.com//api/users/get-nickname?user_id=$uid');
 
   final response = await http.get(
     url,
@@ -154,7 +153,7 @@ Future<String> getName(String uid) async {
 }
 
 Future<String> fetchUserName(String token) async {
-  final url = Uri.parse('http://localhost:8000/api/auth/me');
+  final url = Uri.parse('https://my-flutter-web.onrender.com//api/auth/me');
 
   final response = await http.get(
     url,

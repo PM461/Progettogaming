@@ -10,3 +10,4 @@ email-validator
 SPARQLWrapper
 authlib
 starlette
+httpx

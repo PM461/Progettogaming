@@ -54,11 +54,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String? _profileImageName;
   Future<void> _loadProfileImage() async {
-    final imageName = await ProfileService.getProfileImageName();
     setState(() {
-      _profileImageName = imageName;
     });
   }
 
@@ -100,9 +97,9 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
+            const ElevatedButton(
               onPressed: AuthService.googleLogin,
-              child: const Text("Login con Google"),
+              child: Text("Login con Google"),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

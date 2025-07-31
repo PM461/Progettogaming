@@ -57,9 +57,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _showAddToListDialog() async {
     if (userId == null) return;
-
-    final url =
-        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/lists');
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final url = Uri.parse('$apiBaseUrl/user/$userId/lists');
     final response = await http.get(url);
 
     if (response.statusCode != 200) {
@@ -120,9 +119,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
                 Navigator.pop(context);
                 await _addGameToLibraryIfNeeded();
-
-                final url = Uri.parse(
-                    "https://my-backend-ucgu.onrender.com/user/$userId/create_list");
+                const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+                final url = Uri.parse("$apiBaseUrl/user/$userId/create_list");
                 final response = await http.post(
                   url,
                   headers: {"Content-Type": "application/json"},
@@ -156,8 +154,9 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _addGameToLibraryIfNeeded() async {
     if (!isInLibrary && userId != null) {
-      final url = Uri.parse(
-          'https://my-backend-ucgu.onrender.com/user/$userId/add_game/$gameId');
+
+      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+      final url = Uri.parse('$apiBaseUrl/user/$userId/add_game/$gameId');
       final response = await http.post(url);
       if (response.statusCode == 200) {
         setState(() {
@@ -168,8 +167,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
   }
 
   Future<void> _addGameToList(String listName) async {
-    final url = Uri.parse(
-        "https://my-backend-ucgu.onrender.com/user/$userId/add_game_to_list");
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final url = Uri.parse("$apiBaseUrl/user/$userId/add_game_to_list");
 
     final response = await http.post(
       url,
@@ -194,8 +193,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _fetchLogo(String company) async {
     final encodedCompany = Uri.encodeComponent(company);
-    final apiUrl =
-        'https://my-backend-ucgu.onrender.com/company_logo?name=$encodedCompany';
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final apiUrl = '$apiBaseUrl/company_logo?name=$encodedCompany';
     print('Fetching company logo for "$company" from $apiUrl');
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -225,8 +224,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _fetchPublisherLogo(String publisherName) async {
     final encodedName = Uri.encodeComponent(publisherName);
-    final apiUrl =
-        'https://my-backend-ucgu.onrender.com/publisher_logo/$encodedName';
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final apiUrl = '$apiBaseUrl/publisher_logo/$encodedName';
     print('Fetching publisher logo for "$publisherName" from $apiUrl');
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -260,9 +259,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
       setState(() => isLoading = false);
       return;
     }
-
-    final url =
-        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/games');
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final url = Uri.parse('$apiBaseUrl/user/$userId/games');
     print('Fetching from $url');
 
     final response = await http.get(url);
@@ -286,20 +284,21 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _toggleGameInLibrary() async {
     if (userId == null) return;
-
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
     final url = Uri.parse(
       isInLibrary
-          ? 'https://my-backend-ucgu.onrender.com/user/$userId/remove_game/$gameId'
-          : 'https://my-backend-ucgu.onrender.com/user/$userId/add_game/$gameId',
+          ? '$apiBaseUrl/user/$userId/remove_game/$gameId'
+          : '$apiBaseUrl/user/$userId/add_game/$gameId',
     );
 
     final response = await (isInLibrary ? http.delete(url) : http.post(url));
 
     if (response.statusCode == 200) {
+      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
       // Se rimuoviamo il gioco dalla libreria, rimuoviamolo anche da tutte le liste
       if (isInLibrary) {
         final cleanupUrl = Uri.parse(
-          'https://my-backend-ucgu.onrender.com/user/$userId/remove_game_from_all_lists/$gameId',
+          '$apiBaseUrl/user/$userId/remove_game_from_all_lists/$gameId',
         );
         final cleanupResponse = await http.post(cleanupUrl);
 

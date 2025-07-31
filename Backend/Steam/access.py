@@ -4,7 +4,8 @@ from pymongo import MongoClient
 from urllib.parse import urlencode
 import re
 from fastapi.responses import HTMLResponse
-
+import httpx
+import time
 from bson import ObjectId
 import os
 from dotenv import load_dotenv
@@ -24,7 +25,8 @@ router = APIRouter()
 # MongoDB Setup
 client = MongoClient(MONGO_URI)
 db = client["progetto_gaming"]
-accounts_collection = db["accounts"]  # Sostituisci con il nome corretto della collezione utenti
+accounts_collection = db["accounts"] 
+games_collection = db["games"]# Sostituisci con il nome corretto della collezione utenti
 
 # Steam OpenID config
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
@@ -195,4 +197,80 @@ async def get_steamid(user_id: str = Query(...)):
         return {"steam_id": None, "message": "SteamID non presente"}
 
     return {"steam_id": steam_id}
-    
+
+
+
+
+def fetch_achievements(appid: int):
+    url = "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/"
+    params = {"key": STEAM_KEY, "appid": appid}
+
+    try:
+        r = httpx.get(url, params=params, timeout=10)
+        data = r.json()
+        achievements = data.get("game", {}).get("availableGameStats", {}).get("achievements", [])
+        return [
+            {
+                "name": a.get("displayName"),
+                "description": a.get("description", ""),
+                "icon": a.get("icon"),
+            }
+            for a in achievements
+        ]
+    except Exception as e:
+        print(f"Errore achievements Steam per {appid}: {e}")
+        return []
+
+
+def fetch_reviews(appid: int):
+    url = f"https://store.steampowered.com/appreviews/{appid}"
+    params = {"json": 1, "language": "all"}
+
+    try:
+        r = httpx.get(url, params=params, timeout=10)
+        data = r.json()
+        summary = data.get("query_summary", {})
+        total_reviews = summary.get("total_reviews", 0)
+        rating_percent = summary.get("total_positive", 0) / total_reviews * 100 if total_reviews > 0 else 0
+        stars = round((rating_percent / 100) * 5, 1)
+        return {
+            "total_reviews": total_reviews,
+            "rating_percent": rating_percent,
+            "stars": stars
+        }
+    except Exception as e:
+        print(f"Errore reviews Steam per {appid}: {e}")
+        return {"total_reviews": 0, "rating_percent": 0, "stars": 0}
+
+
+# === ROUTE ===
+
+@router.post("/update_steam_data")
+def update_steam_data():
+    cursor = games_collection.find({"details.identificativo Steam": {"$exists": True}})
+    count = 0
+    updated = 0
+
+    for game in cursor:
+        # Skip se già aggiornato
+        if "steam" in game and "achievements" in game["steam"]:
+            continue
+
+        appid = game["details"]["identificativo Steam"]
+        achievements = fetch_achievements(appid)
+        reviews = fetch_reviews(appid)
+
+        update_data = {
+            "obiettivi_steam": achievements,
+            "reviews": reviews
+        }
+
+        games_collection.update_one({"_id": game["_id"]}, {"$set": update_data})
+        updated += 1
+        count += 1
+
+        # Rate limit: 3 giochi al secondo
+        if count % 3 == 0:
+            time.sleep(1)
+
+    return {"status": "completato", "aggiornati": updated}

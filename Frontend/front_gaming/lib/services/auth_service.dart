@@ -6,7 +6,8 @@ import 'dart:html' as html; // solo per Flutter Web
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String baseUrl = 'https://my-backend-ucgu.onrender.com';
+  static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const String baseUrl = apiBaseUrl;
 
   // Login classico
   static Future<bool> login(String email, String password) async {
@@ -74,13 +75,14 @@ class AuthService {
 
   // Login Google con popup e ascolto messaggi
   static Future<bool> googleLogin() async {
-    const redirectBase = "https://my-backend-ucgu.onrender.com"; // Cambia se serve
+    const redirectBase = "$apiBaseUrl"; // Cambia se serve
     const loginUrl = "$redirectBase/auth/google/login";
 
     final completer = Completer<bool>();
 
     // Apri popup
-    final popup = html.window.open(loginUrl, "Google Login", "width=500,height=600");
+    final popup =
+        html.window.open(loginUrl, "Google Login", "width=500,height=600");
 
     // Listener messaggi
     late html.EventListener listener;
@@ -88,7 +90,8 @@ class AuthService {
       final data = (event as html.MessageEvent).data;
 
       if (data is String && data.contains("access_token")) {
-        final token = Uri.parse("http://dummy?$data").queryParameters["access_token"];
+        final token =
+            Uri.parse("http://dummy?$data").queryParameters["access_token"];
         if (token != null) {
           await saveToken(token);
 

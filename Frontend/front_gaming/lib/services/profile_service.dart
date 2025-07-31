@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileService {
   final String baseUrl;
-
-  ProfileService({this.baseUrl = 'https://my-backend-ucgu.onrender.com'});
+  static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  ProfileService({this.baseUrl = apiBaseUrl});
 
   Future<String?> getNickname(String userId) async {
     try {
@@ -96,10 +96,10 @@ class ProfileService {
     if (imageName != null && imageName.isNotEmpty) {
       return imageName;
     } else if (userId != null && userId.isNotEmpty) {
+      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
       try {
         final response = await http.get(
-          Uri.parse(
-              'https://my-backend-ucgu.onrender.com/api/users/get-propic?user_id=$userId'),
+          Uri.parse('$apiBaseUrl/api/users/get-propic?user_id=$userId'),
         );
 
         if (response.statusCode == 200) {

@@ -67,8 +67,8 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<void> _loadGeneri() async {
     try {
-      final response = await http
-          .get(Uri.parse('https://my-backend-ucgu.onrender.com/genres'));
+      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+      final response = await http.get(Uri.parse('$apiBaseUrl/genres'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         // Presumo la risposta ha la forma: { "genres": [ { "id": "...", "label": "..." }, ... ] }
@@ -120,9 +120,9 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     try {
+      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
       final response = await http.get(
-        Uri.parse(
-            'https://my-backend-ucgu.onrender.com/find_game?query=$query'),
+        Uri.parse('$apiBaseUrl/find_game?query=$query'),
         headers: {'Content-Type': 'application/json'},
       );
 

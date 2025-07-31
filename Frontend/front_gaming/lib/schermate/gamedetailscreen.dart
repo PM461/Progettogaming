@@ -63,9 +63,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
       );
       return;
     }
-
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
     final url = Uri.parse(
-      "https://my-backend-ucgu.onrender.com/user/$userId/game/${widget.game.gameId}/achievement/$index/toggle_achieved",
+      "$apiBaseUrl/user/$userId/game/${widget.game.gameId}/achievement/$index/toggle_achieved",
     );
 
     try {
@@ -99,9 +99,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
       );
       return;
     }
-
-    final url = Uri.parse(
-        'https://my-backend-ucgu.onrender.com/user/$userId/remove_game/${widget.game.gameId}');
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final url =
+        Uri.parse('$apiBaseUrl/user/$userId/remove_game/${widget.game.gameId}');
 
     try {
       final response = await http.delete(url);
@@ -125,9 +125,9 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
 
   Future<String?> fetchSviluppatoreLogo(String? name) async {
     if (name == null || name.isEmpty) return null;
-
-    final uri = Uri.parse(
-        'https://my-backend-ucgu.onrender.com/company_logo?name=${Uri.encodeComponent(name)}');
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final uri =
+        Uri.parse('$apiBaseUrl/company_logo?name=${Uri.encodeComponent(name)}');
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {

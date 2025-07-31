@@ -210,9 +210,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               );
                               return;
                             }
-
+                            const String apiBaseUrl =
+                                String.fromEnvironment('API_BASE_URL');
                             final url =
-                                'https://my-backend-ucgu.onrender.com/auth/steam/login?account=$account';
+                                '$apiBaseUrl/auth/steam/login?account=$account';
                             final uri = Uri.parse(url);
 
                             if (await canLaunchUrl(uri)) {

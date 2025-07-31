@@ -9,9 +9,8 @@ Future<List<Game>> fetchUserGames() async {
   final userId = prefs.getString('user_id');
 
   if (userId == null) throw Exception("ID utente non trovato");
-
-  final url =
-      Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/games');
+  const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  final url = Uri.parse('$apiBaseUrl/user/$userId/games');
   final response = await http.get(url);
 
   if (response.statusCode == 200) {

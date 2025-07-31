@@ -1,0 +1,931 @@
+[
+  {
+    "_id": { "$oid": "6882567f881700e7d68d343f" },
+    "user_id": { "$oid": "687e2b5bace1808bcc48d511" },
+    "games": [
+      {
+        "game_id": "Q279446",
+        "achievements": [
+          {
+            "name": "Wake Up Call",
+            "apiname": "ACH.SURVIVE_CONTAINER_RIDE",
+            "achieved": false
+          },
+          {
+            "name": "You Monster",
+            "apiname": "ACH.WAKE_UP",
+            "achieved": false
+          },
+          {
+            "name": "Undiscouraged",
+            "apiname": "ACH.LASER",
+            "achieved": false
+          },
+          {
+            "name": "Bridge Over Troubling Water",
+            "apiname": "ACH.BRIDGE",
+            "achieved": false
+          },
+          { "name": "SaBOTour", "apiname": "ACH.BREAK_OUT", "achieved": false },
+          {
+            "name": "Stalemate Associate",
+            "apiname": "ACH.STALEMATE_ASSOCIATE",
+            "achieved": false
+          },
+          {
+            "name": "Tater Tote",
+            "apiname": "ACH.ADDICTED_TO_SPUDS",
+            "achieved": false
+          },
+          {
+            "name": "Vertically Unchallenged",
+            "apiname": "ACH.BLUE_GEL",
+            "achieved": false
+          },
+          {
+            "name": "Stranger Than Friction",
+            "apiname": "ACH.ORANGE_GEL",
+            "achieved": false
+          },
+          {
+            "name": "White Out",
+            "apiname": "ACH.WHITE_GEL",
+            "achieved": false
+          },
+          {
+            "name": "Tunnel of Funnel",
+            "apiname": "ACH.TRACTOR_BEAM",
+            "achieved": false
+          },
+          {
+            "name": "Dual Pit Experiment",
+            "apiname": "ACH.TRIVIAL_TEST",
+            "achieved": false
+          },
+          {
+            "name": "The Part Where He Kills You",
+            "apiname": "ACH.WHEATLEY_TRIES_TO",
+            "achieved": false
+          },
+          {
+            "name": "Lunacy",
+            "apiname": "ACH.SHOOT_THE_MOON",
+            "achieved": false
+          },
+          {
+            "name": "Drop Box",
+            "apiname": "ACH.BOX_HOLE_IN_ONE",
+            "achieved": false
+          },
+          {
+            "name": "Overclocker",
+            "apiname": "ACH.SPEED_RUN_LEVEL",
+            "achieved": false
+          },
+          { "name": "Pit Boss", "apiname": "ACH.COMPLIANT", "achieved": false },
+          {
+            "name": "Preservation of Mass",
+            "apiname": "ACH.SAVE_CUBE",
+            "achieved": false
+          },
+          {
+            "name": "Pturretdactyl",
+            "apiname": "ACH.LAUNCH_TURRET",
+            "achieved": false
+          },
+          {
+            "name": "Final Transmission",
+            "apiname": "ACH.CLEAN_UP",
+            "achieved": false
+          },
+          {
+            "name": "Good Listener",
+            "apiname": "ACH.REENTER_TEST_CHAMBERS",
+            "achieved": false
+          },
+          {
+            "name": "Scanned Alone",
+            "apiname": "ACH.NOT_THE_DROID",
+            "achieved": false
+          },
+          {
+            "name": "No Hard Feelings",
+            "apiname": "ACH.SAVE_REDEMPTION_TURRET",
+            "achieved": false
+          },
+          {
+            "name": "Schrodinger's Catch",
+            "apiname": "ACH.CATCH_CRAZY_BOX",
+            "achieved": false
+          },
+          {
+            "name": "Ship Overboard",
+            "apiname": "ACH.NO_BOAT",
+            "achieved": false
+          },
+          {
+            "name": "Door Prize",
+            "apiname": "ACH.A3_DOORS",
+            "achieved": false
+          },
+          {
+            "name": "Portrait of a Lady",
+            "apiname": "ACH.PORTRAIT",
+            "achieved": false
+          },
+          {
+            "name": "You Made Your Point",
+            "apiname": "ACH.DEFIANT",
+            "achieved": false
+          },
+          {
+            "name": "Smash TV",
+            "apiname": "ACH.BREAK_MONITORS",
+            "achieved": false
+          },
+          {
+            "name": "High Five",
+            "apiname": "ACH.HI_FIVE_YOUR_PARTNER",
+            "achieved": true
+          },
+          {
+            "name": "Team Building",
+            "apiname": "ACH.TEAM_BUILDING",
+            "achieved": true
+          },
+          {
+            "name": "Confidence Building",
+            "apiname": "ACH.MASS_AND_VELOCITY",
+            "achieved": true
+          },
+          {
+            "name": "Bridge Building",
+            "apiname": "ACH.HUG_NAME",
+            "achieved": false
+          },
+          {
+            "name": "Obstacle Building",
+            "apiname": "ACH.EXCURSION_FUNNELS",
+            "achieved": false
+          },
+          {
+            "name": "You Saved Science",
+            "apiname": "ACH.NEW_BLOOD",
+            "achieved": false
+          },
+          {
+            "name": "Iron Grip",
+            "apiname": "ACH.NICE_CATCH",
+            "achieved": false
+          },
+          { "name": "Gesticul-8", "apiname": "ACH.TAUNTS", "achieved": false },
+          {
+            "name": "Can't Touch This",
+            "apiname": "ACH.YOU_MONSTER",
+            "achieved": false
+          },
+          {
+            "name": "Empty Gesture",
+            "apiname": "ACH.PARTNER_DROP",
+            "achieved": false
+          },
+          {
+            "name": "Party of Three",
+            "apiname": "ACH.PARTY_OF_THREE",
+            "achieved": false
+          },
+          {
+            "name": "Narbacular Drop",
+            "apiname": "ACH.PORTAL_TAUNT",
+            "achieved": false
+          },
+          {
+            "name": "Professor Portal",
+            "apiname": "ACH.TEACHER",
+            "achieved": false
+          },
+          {
+            "name": "Air Show",
+            "apiname": "ACH.WITH_STYLE",
+            "achieved": false
+          },
+          {
+            "name": "Portal Conservation Society",
+            "apiname": "ACH.LIMITED_PORTALS",
+            "achieved": false
+          },
+          {
+            "name": "Four Ring Circus",
+            "apiname": "ACH.FOUR_PORTALS",
+            "achieved": false
+          },
+          {
+            "name": "Triple Crown",
+            "apiname": "ACH.SPEED_RUN_COOP",
+            "achieved": false
+          },
+          {
+            "name": "Still Alive",
+            "apiname": "ACH.STAYING_ALIVE",
+            "achieved": false
+          },
+          {
+            "name": "Asking for Trouble",
+            "apiname": "ACH.TAUNT_CAMERA",
+            "achieved": false
+          },
+          {
+            "name": "Rock Portal Scissors",
+            "apiname": "ACH.ROCK_CRUSHES_ROBOT",
+            "achieved": false
+          },
+          {
+            "name": "Friends List With Benefits",
+            "apiname": "ACH.SPREAD_THE_LOVE",
+            "achieved": false
+          },
+          {
+            "name": "Talent Show",
+            "apiname": "ACH.SUMMER_SALE",
+            "achieved": false
+          }
+        ]
+      },
+      {
+        "game_id": "Q332697",
+        "achievements": [
+          { "name": "Timber!!", "apiname": "TIMBER", "achieved": true },
+          { "name": "No Hobo", "apiname": "NO_HOBO", "achieved": true },
+          {
+            "name": "Stop! Hammer Time!",
+            "apiname": "OBTAIN_HAMMER",
+            "achieved": false
+          },
+          { "name": "Ooo! Shiny!", "apiname": "OOO_SHINY", "achieved": true },
+          {
+            "name": "Heart Breaker",
+            "apiname": "HEART_BREAKER",
+            "achieved": true
+          },
+          { "name": "Heavy Metal", "apiname": "HEAVY_METAL", "achieved": true },
+          { "name": "I Am Loot!", "apiname": "I_AM_LOOT", "achieved": true },
+          { "name": "Star Power", "apiname": "STAR_POWER", "achieved": true },
+          {
+            "name": "Hold on Tight!",
+            "apiname": "HOLD_ON_TIGHT",
+            "achieved": false
+          },
+          { "name": "Eye on You", "apiname": "EYE_ON_YOU", "achieved": true },
+          {
+            "name": "Smashing, Poppet!",
+            "apiname": "SMASHING_POPPET",
+            "achieved": false
+          },
+          {
+            "name": "Worm Fodder",
+            "apiname": "WORM_FODDER",
+            "achieved": false
+          },
+          { "name": "Mastermind", "apiname": "MASTERMIND", "achieved": false },
+          {
+            "name": "Where's My Honey?",
+            "apiname": "WHERES_MY_HONEY",
+            "achieved": false
+          },
+          {
+            "name": "Sting Operation",
+            "apiname": "STING_OPERATION",
+            "achieved": false
+          },
+          { "name": "Boned", "apiname": "BONED", "achieved": false },
+          {
+            "name": "Dungeon Heist",
+            "apiname": "DUNGEON_HEIST",
+            "achieved": false
+          },
+          {
+            "name": "It's Getting Hot in Here",
+            "apiname": "ITS_GETTING_HOT_IN_HERE",
+            "achieved": true
+          },
+          {
+            "name": "Miner for Fire",
+            "apiname": "MINER_FOR_FIRE",
+            "achieved": false
+          },
+          {
+            "name": "Still Hungry",
+            "apiname": "STILL_HUNGRY",
+            "achieved": false
+          },
+          { "name": "It's Hard!", "apiname": "ITS_HARD", "achieved": false },
+          {
+            "name": "Begone, Evil!",
+            "apiname": "BEGONE_EVIL",
+            "achieved": false
+          },
+          {
+            "name": "Extra Shiny!",
+            "apiname": "EXTRA_SHINY",
+            "achieved": false
+          },
+          {
+            "name": "Head in the Clouds",
+            "apiname": "HEAD_IN_THE_CLOUDS",
+            "achieved": false
+          },
+          { "name": "Like a Boss", "apiname": "LIKE_A_BOSS", "achieved": true },
+          {
+            "name": "Buckets of Bolts",
+            "apiname": "BUCKETS_OF_BOLTS",
+            "achieved": false
+          },
+          { "name": "Drax Attax", "apiname": "DRAX_ATTAX", "achieved": false },
+          {
+            "name": "Photosynthesis",
+            "apiname": "PHOTOSYNTHESIS",
+            "achieved": false
+          },
+          { "name": "Get a Life", "apiname": "GET_A_LIFE", "achieved": false },
+          {
+            "name": "The Great Southern Plantkill",
+            "apiname": "THE_GREAT_SOUTHERN_PLANTKILL",
+            "achieved": false
+          },
+          {
+            "name": "Temple Raider",
+            "apiname": "TEMPLE_RAIDER",
+            "achieved": false
+          },
+          {
+            "name": "Lihzahrdian Idol",
+            "apiname": "LIHZAHRDIAN_IDOL",
+            "achieved": false
+          },
+          {
+            "name": "Robbing the Grave",
+            "apiname": "ROBBING_THE_GRAVE",
+            "achieved": false
+          },
+          { "name": "Big Booty", "apiname": "BIG_BOOTY", "achieved": false },
+          {
+            "name": "Fish Out of Water",
+            "apiname": "FISH_OUT_OF_WATER",
+            "achieved": false
+          },
+          {
+            "name": "Obsessive Devotion",
+            "apiname": "OBSESSIVE_DEVOTION",
+            "achieved": false
+          },
+          {
+            "name": "Star Destroyer",
+            "apiname": "STAR_DESTROYER",
+            "achieved": false
+          },
+          {
+            "name": "Champion of Terraria",
+            "apiname": "CHAMPION_OF_TERRARIA",
+            "achieved": false
+          },
+          { "name": "Bloodbath", "apiname": "BLOODBATH", "achieved": true },
+          {
+            "name": "Slippery Shinobi",
+            "apiname": "SLIPPERY_SHINOBI",
+            "achieved": false
+          },
+          {
+            "name": "Goblin Punter",
+            "apiname": "GOBLIN_PUNTER",
+            "achieved": false
+          },
+          {
+            "name": "Walk the Plank",
+            "apiname": "WALK_THE_PLANK",
+            "achieved": false
+          },
+          {
+            "name": "Kill the Sun",
+            "apiname": "KILL_THE_SUN",
+            "achieved": false
+          },
+          {
+            "name": "Do You Want to Slay a Snowman?",
+            "apiname": "DO_YOU_WANT_TO_SLAY_A_SNOWMAN",
+            "achieved": false
+          },
+          {
+            "name": "Tin-Foil Hatter",
+            "apiname": "TIN_FOIL_HATTER",
+            "achieved": false
+          },
+          {
+            "name": "Baleful Harvest",
+            "apiname": "BALEFUL_HARVEST",
+            "achieved": false
+          },
+          { "name": "Ice Scream", "apiname": "ICE_SCREAM", "achieved": false },
+          {
+            "name": "Sticky Situation",
+            "apiname": "STICKY_SITUATION",
+            "achieved": false
+          },
+          {
+            "name": "Real Estate Agent",
+            "apiname": "REAL_ESTATE_AGENT",
+            "achieved": false
+          },
+          {
+            "name": "Not the Bees!",
+            "apiname": "NOT_THE_BEES",
+            "achieved": false
+          },
+          {
+            "name": "Jeepers Creepers",
+            "apiname": "JEEPERS_CREEPERS",
+            "achieved": false
+          },
+          { "name": "Funkytown", "apiname": "FUNKYTOWN", "achieved": false },
+          { "name": "Into Orbit", "apiname": "INTO_ORBIT", "achieved": true },
+          {
+            "name": "Rock Bottom",
+            "apiname": "ROCK_BOTTOM",
+            "achieved": false
+          },
+          {
+            "name": "Mecha Mayhem",
+            "apiname": "MECHA_MAYHEM",
+            "achieved": false
+          },
+          {
+            "name": "Gelatin World Tour",
+            "apiname": "GELATIN_WORLD_TOUR",
+            "achieved": false
+          },
+          {
+            "name": "Fashion Statement",
+            "apiname": "FASHION_STATEMENT",
+            "achieved": false
+          },
+          {
+            "name": "Vehicular Manslaughter",
+            "apiname": "VEHICULAR_MANSLAUGHTER",
+            "achieved": true
+          },
+          { "name": "Bulldozer", "apiname": "BULLDOZER", "achieved": false },
+          {
+            "name": "There are Some Who Call Him...",
+            "apiname": "THERE_ARE_SOME_WHO_CALL_HIM",
+            "achieved": false
+          },
+          {
+            "name": "Deceiver of Fools",
+            "apiname": "DECEIVER_OF_FOOLS",
+            "achieved": false
+          },
+          {
+            "name": "Sword of the Hero",
+            "apiname": "SWORD_OF_THE_HERO",
+            "achieved": false
+          },
+          { "name": "Lucky Break", "apiname": "LUCKY_BREAK", "achieved": true },
+          {
+            "name": "Throwing Lines",
+            "apiname": "THROWING_LINES",
+            "achieved": false
+          },
+          { "name": "Dye Hard", "apiname": "DYE_HARD", "achieved": false },
+          { "name": "Sick Throw", "apiname": "SICK_THROW", "achieved": false },
+          {
+            "name": "The Frequent Flyer",
+            "apiname": "FREQUENT_FLYER",
+            "achieved": false
+          },
+          {
+            "name": "The Cavalry",
+            "apiname": "THE_CAVALRY",
+            "achieved": false
+          },
+          {
+            "name": "Completely Awesome",
+            "apiname": "COMPLETELY_AWESOME",
+            "achieved": false
+          },
+          { "name": "Til Death...", "apiname": "TIL_DEATH", "achieved": true },
+          {
+            "name": "Archaeologist",
+            "apiname": "ARCHAEOLOGIST",
+            "achieved": false
+          },
+          {
+            "name": "Pretty in Pink",
+            "apiname": "PRETTY_IN_PINK",
+            "achieved": false
+          },
+          {
+            "name": "Rainbows and Unicorns",
+            "apiname": "RAINBOWS_AND_UNICORNS",
+            "achieved": false
+          },
+          {
+            "name": "You and What Army?",
+            "apiname": "YOU_AND_WHAT_ARMY",
+            "achieved": false
+          },
+          { "name": "Prismancer", "apiname": "PRISMANCER", "achieved": false },
+          {
+            "name": "It Can Talk?!",
+            "apiname": "IT_CAN_TALK",
+            "achieved": false
+          },
+          {
+            "name": "Watch Your Step!",
+            "apiname": "WATCH_YOUR_STEP",
+            "achieved": true
+          },
+          {
+            "name": "Marathon Medalist",
+            "apiname": "MARATHON_MEDALIST",
+            "achieved": true
+          },
+          {
+            "name": "Glorious Golden Pole",
+            "apiname": "GLORIOUS_GOLDEN_POLE",
+            "achieved": false
+          },
+          {
+            "name": "Servant-in-Training",
+            "apiname": "SERVANT_IN_TRAINING",
+            "achieved": false
+          },
+          {
+            "name": "Good Little Slave",
+            "apiname": "GOOD_LITTLE_SLAVE",
+            "achieved": false
+          },
+          {
+            "name": "Trout Monkey",
+            "apiname": "TROUT_MONKEY",
+            "achieved": false
+          },
+          {
+            "name": "Fast and Fishious",
+            "apiname": "FAST_AND_FISHIOUS",
+            "achieved": false
+          },
+          {
+            "name": "Supreme Helper Minion!",
+            "apiname": "SUPREME_HELPER_MINION",
+            "achieved": false
+          },
+          { "name": "Topped Off", "apiname": "TOPPED_OFF", "achieved": false },
+          {
+            "name": "Slayer of Worlds",
+            "apiname": "SLAYER_OF_WORLDS",
+            "achieved": false
+          },
+          {
+            "name": "You Can Do It!",
+            "apiname": "YOU_CAN_DO_IT",
+            "achieved": true
+          },
+          {
+            "name": "Matching Attire",
+            "apiname": "MATCHING_ATTIRE",
+            "achieved": false
+          },
+          { "name": "Benched", "apiname": "BENCHED", "achieved": true },
+          {
+            "name": "Fae Flayer",
+            "apiname": "DEFEAT_EMPRESS_OF_LIGHT",
+            "achieved": false
+          },
+          {
+            "name": "Just Desserts",
+            "apiname": "DEFEAT_QUEEN_SLIME",
+            "achieved": false
+          },
+          {
+            "name": "Don't Dread on Me",
+            "apiname": "DEFEAT_DREADNAUTILUS",
+            "achieved": false
+          },
+          {
+            "name": "Hero of Etheria",
+            "apiname": "DEFEAT_OLD_ONES_ARMY_TIER3",
+            "achieved": false
+          },
+          {
+            "name": "Infinity +1 Sword",
+            "apiname": "GET_ZENITH",
+            "achieved": false
+          },
+          {
+            "name": "Boots of the Hero",
+            "apiname": "GET_TERRASPARK_BOOTS",
+            "achieved": false
+          },
+          {
+            "name": "A Rather Blustery Day",
+            "apiname": "FLY_A_KITE_ON_A_WINDY_DAY",
+            "achieved": false
+          },
+          {
+            "name": "Quiet Neighborhood",
+            "apiname": "FOUND_GRAVEYARD",
+            "achieved": true
+          },
+          {
+            "name": "Hot Reels!",
+            "apiname": "GO_LAVA_FISHING",
+            "achieved": false
+          },
+          {
+            "name": "Heliophobia",
+            "apiname": "TURN_GNOME_TO_STATUE",
+            "achieved": false
+          },
+          {
+            "name": "Leading Landlord",
+            "apiname": "TALK_TO_NPC_AT_MAX_HAPPINESS",
+            "achieved": false
+          },
+          {
+            "name": "Feeling Petty",
+            "apiname": "PET_THE_PET",
+            "achieved": false
+          },
+          {
+            "name": "Hey! Listen!",
+            "apiname": "FIND_A_FAIRY",
+            "achieved": true
+          },
+          {
+            "name": "Jolly Jamboree",
+            "apiname": "THROW_A_PARTY",
+            "achieved": false
+          },
+          {
+            "name": "Dead Men Tell No Tales",
+            "apiname": "DIE_TO_DEAD_MANS_CHEST",
+            "achieved": false
+          },
+          {
+            "name": "An Eye For An Eye",
+            "apiname": "DEFEAT_DEERCLOPS",
+            "achieved": false
+          },
+          {
+            "name": "Feast of Midas",
+            "apiname": "GET_GOLDEN_DELIGHT",
+            "achieved": false
+          },
+          {
+            "name": "Unusual Survival Strategies",
+            "apiname": "DRINK_BOTTLED_WATER_WHILE_DROWNING",
+            "achieved": false
+          },
+          {
+            "name": "Black Mirror",
+            "apiname": "GET_CELL_PHONE",
+            "achieved": false
+          },
+          {
+            "name": "Ankhumulation Complete",
+            "apiname": "GET_ANKH_SHIELD",
+            "achieved": false
+          },
+          {
+            "name": "Torch God",
+            "apiname": "GAIN_TORCH_GODS_FAVOR",
+            "achieved": false
+          },
+          {
+            "name": "A Rare Realm",
+            "apiname": "PLAY_ON_A_SPECIAL_SEED",
+            "achieved": false
+          },
+          {
+            "name": "The Great Slime Mitosis",
+            "apiname": "ALL_TOWN_SLIMES",
+            "achieved": false
+          },
+          {
+            "name": "A Shimmer In The Dark",
+            "apiname": "TRANSMUTE_ITEM",
+            "achieved": false
+          },
+          {
+            "name": "And Good Riddance!",
+            "apiname": "PURIFY_ENTIRE_WORLD",
+            "achieved": false
+          },
+          {
+            "name": "To Infinity... and Beyond!",
+            "apiname": "TO_INFINITY_AND_BEYOND",
+            "achieved": false
+          }
+        ]
+      },
+      { "game_id": "Q170410", "achievements": [] },
+      { "game_id": "Q509177", "achievements": [] },
+      { "game_id": "Q610968", "achievements": [] },
+      { "game_id": "Q639619", "achievements": [] },
+      {
+        "game_id": "Q1166232",
+        "achievements": [
+          { "name": "ACH_00", "achieved": true },
+          { "name": "ACH_01", "achieved": true },
+          { "name": "ACH_02", "achieved": true },
+          { "name": "ACH_03", "achieved": true },
+          { "name": "ACH_04", "achieved": false },
+          { "name": "ACH_05", "achieved": false },
+          { "name": "ACH_06", "achieved": false },
+          { "name": "ACH_07", "achieved": false },
+          { "name": "ACH_08", "achieved": false },
+          { "name": "ACH_09", "achieved": false },
+          { "name": "ACH_10", "achieved": false },
+          { "name": "ACH_11", "achieved": false },
+          { "name": "ACH_12", "achieved": false },
+          { "name": "ACH_13", "achieved": false },
+          { "name": "ACH_14", "achieved": false },
+          { "name": "ACH_15", "achieved": false },
+          { "name": "ACH_16", "achieved": false },
+          { "name": "ACH_17", "achieved": false },
+          { "name": "ACH_18", "achieved": false },
+          { "name": "ACH_19", "achieved": false },
+          { "name": "ACH_20", "achieved": false },
+          { "name": "ACH_21", "achieved": false },
+          { "name": "ACH_22", "achieved": false },
+          { "name": "ACH_23", "achieved": false },
+          { "name": "ACH_24", "achieved": false },
+          { "name": "ACH_25", "achieved": false },
+          { "name": "ACH_26", "achieved": false },
+          { "name": "ACH_27", "achieved": false },
+          { "name": "ACH_28", "achieved": false },
+          { "name": "ACH_29", "achieved": false },
+          { "name": "ACH_30", "achieved": false },
+          { "name": "ACH_31", "achieved": false },
+          { "name": "ACH_32", "achieved": false },
+          { "name": "ACH_33", "achieved": false },
+          { "name": "ACH_34", "achieved": false },
+          { "name": "ACH_35", "achieved": false },
+          { "name": "ACH_36", "achieved": false },
+          { "name": "ACH_37", "achieved": false },
+          { "name": "ACH_38", "achieved": false },
+          { "name": "ACH_39", "achieved": false },
+          { "name": "ACH_40", "achieved": false }
+        ]
+      },
+      { "game_id": "Q22986", "achievements": [] },
+      {
+        "game_id": "Q650025",
+        "achievements": [
+          { "name": "Achievement_1", "achieved": false },
+          { "name": "Achievement_2", "achieved": false },
+          { "name": "Achievement_3", "achieved": false },
+          { "name": "Achievement_4", "achieved": false },
+          { "name": "Achievement_5", "achieved": false },
+          { "name": "Achievement_6", "achieved": false },
+          { "name": "Achievement_7", "achieved": false },
+          { "name": "Achievement_8", "achieved": false },
+          { "name": "Achievement_9", "achieved": false },
+          { "name": "Achievement_10", "achieved": false },
+          { "name": "Achievement_11", "achieved": false },
+          { "name": "Achievement_12", "achieved": false },
+          { "name": "Achievement_13", "achieved": false },
+          { "name": "Achievement_14", "achieved": false },
+          { "name": "Achievement_15", "achieved": false },
+          { "name": "Achievement_16", "achieved": false },
+          { "name": "Achievement_17", "achieved": false },
+          { "name": "Achievement_18", "achieved": false },
+          { "name": "Achievement_19", "achieved": false },
+          { "name": "Achievement_20", "achieved": false },
+          { "name": "Achievement_21", "achieved": false },
+          { "name": "Achievement_22", "achieved": false },
+          { "name": "Achievement_23", "achieved": false },
+          { "name": "Achievement_24", "achieved": false },
+          { "name": "Achievement_25", "achieved": false },
+          { "name": "Achievement_26", "achieved": false },
+          { "name": "Achievement_27", "achieved": false },
+          { "name": "Achievement_28", "achieved": false },
+          { "name": "Achievement_29", "achieved": false },
+          { "name": "Achievement_30", "achieved": false },
+          { "name": "Achievement_31", "achieved": false },
+          { "name": "Achievement_32", "achieved": false },
+          { "name": "Achievement_33", "achieved": false },
+          { "name": "Achievement_34", "achieved": false },
+          { "name": "Achievement_35", "achieved": false },
+          { "name": "Achievement_36", "achieved": false },
+          { "name": "Achievement_37", "achieved": false },
+          { "name": "Achievement_38", "achieved": false },
+          { "name": "Achievement_39", "achieved": false },
+          { "name": "Achievement_40", "achieved": false },
+          { "name": "Achievement_41", "achieved": false },
+          { "name": "Achievement_42", "achieved": false },
+          { "name": "Achievement_43", "achieved": false },
+          { "name": "Achievement_44", "achieved": false },
+          { "name": "Achievement_45", "achieved": false },
+          { "name": "Achievement_46", "achieved": false },
+          { "name": "Achievement_47", "achieved": false },
+          { "name": "Achievement_48", "achieved": false },
+          { "name": "Achievement_49", "achieved": false },
+          { "name": "Achievement_50", "achieved": false },
+          { "name": "Achievement_51", "achieved": false },
+          { "name": "Achievement_52", "achieved": false },
+          { "name": "Achievement_53", "achieved": false },
+          { "name": "Achievement_54", "achieved": false },
+          { "name": "Achievement_55", "achieved": false },
+          { "name": "Achievement_56", "achieved": false },
+          { "name": "Achievement_57", "achieved": false },
+          { "name": "Achievement_58", "achieved": false },
+          { "name": "Achievement_59", "achieved": false },
+          { "name": "Achievement_60", "achieved": false }
+        ]
+      },
+      { "game_id": "Q1154227", "achievements": [] }
+    ],
+    "lists": [
+      { "name": "cacca", "game_ids": [] },
+      { "name": "pollo", "game_ids": ["Q631331", "Q964997"] },
+      { "name": "string", "game_ids": ["string"] },
+      { "name": "nacikki", "game_ids": ["Q22986"] },
+      { "name": "nintendo", "game_ids": ["Q509177", "Q650025", "Q1154227"] },
+      { "name": "cazzo", "game_ids": ["Q650025"] }
+    ]
+  },
+  {
+    "_id": { "$oid": "68825fcff295d49b69386276" },
+    "user_id": { "$oid": "68824c25751edf5a807197ff" },
+    "games": []
+  },
+  {
+    "_id": { "$oid": "6888d63d153a525127dd8a3f" },
+    "user_id": { "$oid": "6888cc3159e1a477068c38f8" },
+    "games": [
+      { "game_id": "Q40627", "achievements": [] },
+      { "game_id": "Q1584849", "achievements": [] }
+    ],
+    "lists": [{ "name": "Sborribuys", "game_ids": ["Q40627", "Q1584849"] }]
+  },
+  {
+    "_id": { "$oid": "6888d765153a525127dd8a40" },
+    "user_id": { "$oid": "6888d74859e1a477068c3caa" },
+    "games": [{ "game_id": "Q17146", "achievements": [] }]
+  },
+  {
+    "_id": { "$oid": "6888d875153a525127dd8a41" },
+    "user_id": { "$oid": "6888d85059e1a477068c3d6f" },
+    "games": [
+      { "game_id": "Q40166", "achievements": [] },
+      { "game_id": "Q1195840", "achievements": [] }
+    ]
+  },
+  {
+    "_id": { "$oid": "6888d9b5153a525127dd8a42" },
+    "user_id": { "$oid": "6881e5474668fce4542c84b9" },
+    "games": [
+      { "game_id": "Q647249", "achievements": [] },
+      { "game_id": "Q692989", "achievements": [] },
+      { "game_id": "Q49740", "achievements": [] },
+      { "game_id": "Q349375", "achievements": [] },
+      { "game_id": "Q843456", "achievements": [] },
+      { "game_id": "Q71936", "achievements": [] },
+      { "game_id": "Q870981", "achievements": [] },
+      { "game_id": "Q1198580", "achievements": [] }
+    ],
+    "lists": [
+      { "name": "pollono", "game_ids": ["Q647249"] },
+      { "name": "corse", "game_ids": ["Q843456"] }
+    ]
+  },
+  {
+    "_id": { "$oid": "6888dae1153a525127dd8a43" },
+    "user_id": { "$oid": "6888daa459e1a477068c3e05" },
+    "games": [
+      {
+        "game_id": "Q218568",
+        "achievements": [
+          { "name": "ACHIEVEMENT_POINT", "achieved": false },
+          { "name": "ACHIEVEMENT_LINE", "achieved": false },
+          { "name": "ACHIEVEMENT_TRIANGLE", "achieved": false },
+          { "name": "ACHIEVEMENT_SQUARE", "achieved": false },
+          { "name": "ACHIEVEMENT_PENTAGON", "achieved": false },
+          { "name": "ACHIEVEMENT_HEXAGON", "achieved": false }
+        ]
+      },
+      { "game_id": "Q40627", "achievements": [] },
+      { "game_id": "Q1154227", "achievements": [] }
+    ]
+  },
+  {
+    "_id": { "$oid": "68890a67e8b16bb4e755ea52" },
+    "user_id": { "$oid": "68890a4e59e1a477068c5dd0" },
+    "games": []
+  },
+  {
+    "_id": { "$oid": "688aa6645378896ce0d932e0" },
+    "user_id": { "$oid": "688aa55d59e1a477068cfee0" },
+    "games": [{ "game_id": "Q1200940", "achievements": [] }]
+  }
+]

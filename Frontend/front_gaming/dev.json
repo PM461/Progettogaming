@@ -1,0 +1,4 @@
+{
+  "API_BASE_URL": "https://my-backend-ucgu.onrender.com",
+  "SVG_CONVERTER_PATH": "/convert_svg_to_png"
+}

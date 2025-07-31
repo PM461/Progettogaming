@@ -481,3 +481,17 @@ def remove_game_from_list(user_id: str, list_name: str = Query(..., description=
     )
 
     return {"message": f"Gioco rimosso dalla lista '{list_name}'"}
+
+@router.get("/game/{game_id}")
+def get_game_by_id(game_id: str):
+    # Cerca il gioco nella collection
+    game = games_collection.find_one({"_id": game_id})
+
+    if not game:
+        raise HTTPException(status_code=404, detail="Gioco non trovato")
+
+    # Converti ObjectId in stringa, se presente
+    if "_id" in game:
+        game["_id"] = str(game["_id"])
+
+    return game

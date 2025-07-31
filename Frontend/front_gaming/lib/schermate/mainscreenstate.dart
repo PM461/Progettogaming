@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:front_gaming/main.dart';
+import 'package:front_gaming/schermate/carosello_raccomandazioni.dart';
+import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:front_gaming/schermate/gamedetail.dart';
 import 'package:front_gaming/services/auth_service.dart';
 import 'package:http/http.dart' as http;
@@ -16,11 +18,12 @@ import 'search_page.dart';
 
 class MainScreenState extends State<MainScreen> {
   late Future<String> futureName;
+  List<Map<String, dynamic>> raccomandati = [];
+  List<Map<String, dynamic>> nuoviSimili = [];
+  int _currentIndex = 0;
 
   String? _selectedImageName;
   bool _hasLoadedOnce = false;
-
-  int _selectedIndex = 0; // indice selezione navbar
 
   final List<Widget> _pages = [];
 
@@ -29,11 +32,58 @@ class MainScreenState extends State<MainScreen> {
     super.initState();
     futureName = loadName();
     _loadProfileImage();
+    _loadRecommendations(); // <--- AGGIUNTA
 
     // Inizializza le pagine per ogni tab
     _pages.add(_buildHomeContent());
     _pages.add(const MyLibraryScreen()); // Libreria
     _pages.add(const ProfilePage()); // Profilo
+  }
+
+Future<void> _loadRecommendations() async {
+  final prefs = await SharedPreferences.getInstance();
+  final userId = prefs.getString('user_id');
+  const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  if (userId == null) return;
+
+  try {
+    final res = await http.get(Uri.parse(
+        '$apiBaseUrl/api/users/get-raccomandazione?user_id=$userId'));
+    if (res.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(res.bodyBytes));
+      final idsRaccomandati = List<String>.from(
+          data['raccomandazione']['recommendations']['raccomandati']);
+      final idsNuovi = List<String>.from(
+          data['raccomandazione']['recommendations']['nuovi_simili']);
+
+      raccomandati = await _fetchGamesByIds(idsRaccomandati, apiBaseUrl);
+      nuoviSimili = await _fetchGamesByIds(idsNuovi, apiBaseUrl);
+
+      setState(() {});
+    }
+  } catch (e) {
+    debugPrint('Errore nel caricamento delle raccomandazioni: $e');
+  }
+}
+
+
+  Future<List<Map<String, dynamic>>> _fetchGamesByIds(
+      List<String> ids, String baseUrl) async {
+    final List<Map<String, dynamic>> games = [];
+
+    for (final id in ids) {
+      try {
+        final res = await http.get(Uri.parse('$baseUrl/game/$id'));
+        if (res.statusCode == 200) {
+          games.add(jsonDecode(res.body));
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+
+    return games;
   }
 
   @override
@@ -58,10 +108,10 @@ class MainScreenState extends State<MainScreen> {
         _selectedImageName = imageName;
       });
     } else if (userId != null && userId.isNotEmpty) {
+      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
       try {
         final response = await http.get(
-          Uri.parse(
-              'https://my-backend-ucgu.onrender.com/api/users/get-propic?user_id=$userId'),
+          Uri.parse('$apiBaseUrl/api/users/get-propic?user_id=$userId'),
         );
 
         if (response.statusCode == 200) {
@@ -97,99 +147,34 @@ class MainScreenState extends State<MainScreen> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   Widget _buildHomeContent() {
-    return Column(
-      children: [
-        const SizedBox(height: 10),
-        const SizedBox(height: 10),
-        const Spacer(),
-        // Non serve più bottone libreria qui perché c'è nella navbar
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          RecommendationCarousel(
+              title: "🎮 Raccomandati per te", games: raccomandati),
+          RecommendationCarousel(
+              title: "🆕 Nuovi simili ai tuoi gusti", games: nuoviSimili),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      _buildHomeContent(), // solo widget senza Scaffold
+      const MyLibraryScreen(), // assicurati che anche qui NON ci sia Scaffold/AppBar
+      const ProfilePage(), // idem come sopra
+    ];
+
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          elevation: 4,
-          automaticallyImplyLeading: false,
-          titleSpacing: 0,
-          title: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              children: [
-                // Titolo a sinistra
-                const Text(
-                  'Gaming Collection',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Icona di ricerca al centro
-                IconButton(
-                  icon: const Icon(Icons.search, size: 30, color: Colors.white),
-                  tooltip: 'Cerca',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SearchPage()),
-                    );
-                  },
-                ),
-
-                const SizedBox(width: 20),
-
-                // Icona libreria
-                IconButton(
-                  icon: const Icon(Icons.library_books,
-                      size: 30, color: Colors.white),
-                  tooltip: 'Vai alla libreria',
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/library');
-                  },
-                ),
-
-                const SizedBox(width: 20),
-
-                // Avatar profilo
-                GestureDetector(
-                  onTap: () async {
-                    await Navigator.pushNamed(context, '/profile');
-                    _loadProfileImage();
-                  },
-                  child: CircleAvatar(
-                    radius: 25,
-                    backgroundImage: AssetImage(
-                      _selectedImageName != null
-                          ? 'images/propic/${_selectedImageName!}.png'
-                          : 'images/propic/1.png',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-
-      // Rimuoviamo vecchi contenuti nel body
-      body: const SizedBox.shrink(),
+      appBar: CustomAppBar(
+          selectedImageName: _selectedImageName), // qui solo la tua AppBar
+      body: pages[_currentIndex],
     );
   }
 }
@@ -200,8 +185,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Pagina Profilo'),
-    );
+    // Solo contenuto, niente Scaffold o AppBar
+    return Center(child: Text('Pagina Profilo'));
   }
 }

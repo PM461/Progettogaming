@@ -8,6 +8,7 @@ from bson import ObjectId
 MONGO_URI = os.getenv("MONGO_URI")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["progetto_gaming"]
+raccomandazioni_collection = db["raccomandazioni"]
 
 # Definisci tutte le collections qui
 users_collection = db["users"]
@@ -109,3 +110,18 @@ async def get_data(user_id: str):
         return {"data": user["data"]}
     else:
         return {"message": "Data non trovata per l'utente specificato"}
+    
+@router.get("/get-raccomandazione")
+async def get_raccomandazione(user_id: str):
+    
+    raccomandazione = await raccomandazioni_collection.find_one({"user_id": user_id})
+    print(raccomandazione)
+    if not raccomandazione:
+        raise HTTPException(status_code=404, detail="Raccomandazione non trovata per l'utente specificato")
+    
+    # Converti ObjectId in stringa se presente nel documento
+    raccomandazione["_id"] = str(raccomandazione["_id"])
+    if "user_id" in raccomandazione:
+        raccomandazione["user_id"] = str(raccomandazione["user_id"])
+
+    return {"raccomandazione": raccomandazione}

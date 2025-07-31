@@ -22,6 +22,7 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   @override
   Widget build(BuildContext context) {
@@ -47,14 +48,13 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
-  
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-String? _profileImageName;
+  String? _profileImageName;
   Future<void> _loadProfileImage() async {
     final imageName = await ProfileService.getProfileImageName();
     setState(() {
@@ -96,7 +96,6 @@ String? _profileImageName;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(selectedImageName: _profileImageName),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -127,8 +126,8 @@ class MainScreen extends StatefulWidget {
 }
 
 Future<String> getName(String uid) async {
-  final url =
-      Uri.parse('https://my-backend-ucgu.onrender.com/api/users/get-nickname?user_id=$uid');
+  const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  final url = Uri.parse('$apiBaseUrl/api/users/get-nickname?user_id=$uid');
 
   final response = await http.get(
     url,
@@ -154,7 +153,8 @@ Future<String> getName(String uid) async {
 }
 
 Future<String> fetchUserName(String token) async {
-  final url = Uri.parse('https://my-backend-ucgu.onrender.com/api/auth/me');
+  const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  final url = Uri.parse('$apiBaseUrl/api/auth/me');
 
   final response = await http.get(
     url,
@@ -204,8 +204,9 @@ Future<String> getUserName({String? token, String? uid}) async {
 }
 
 Future<Uint8List?> fetchPngFromSvgUrl(String svgUrl) async {
+  const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
   final apiUrl =
-      'https://my-backend-ucgu.onrender.com/convert_svg_to_png?url=${Uri.encodeComponent(svgUrl)}';
+      '$apiBaseUrl/convert_svg_to_png?url=${Uri.encodeComponent(svgUrl)}';
 
   try {
     final response = await http.get(Uri.parse(apiUrl));

@@ -160,10 +160,9 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     if (userId == null || userId.isEmpty) {
       throw Exception("ID utente non trovato");
     }
-
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
     // Chiamata per ottenere giochi
-    final gamesUrl =
-        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/games');
+    final gamesUrl = Uri.parse('$apiBaseUrl/user/$userId/games');
     final gamesResponse = await http.get(gamesUrl);
     if (gamesResponse.statusCode != 200) {
       throw Exception("Errore nel recupero dei giochi");
@@ -174,8 +173,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
         .toList();
 
     // Chiamata per ottenere liste
-    final listsUrl =
-        Uri.parse('https://my-backend-ucgu.onrender.com/user/$userId/lists');
+    final listsUrl = Uri.parse('$apiBaseUrl/user/$userId/lists');
     final listsResponse = await http.get(listsUrl);
     if (listsResponse.statusCode != 200) {
       throw Exception("Errore nel recupero delle liste");
@@ -214,9 +212,9 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     if (userId == null || userId.isEmpty) {
       throw Exception("ID utente non trovato");
     }
-
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
     final url = Uri.parse(
-        'https://my-backend-ucgu.onrender.com/user/$userId/remove_game_from_list?list_name=${Uri.encodeQueryComponent(listName)}&game_id=${Uri.encodeQueryComponent(gameId)}');
+        '$apiBaseUrl/user/$userId/remove_game_from_list?list_name=${Uri.encodeQueryComponent(listName)}&game_id=${Uri.encodeQueryComponent(gameId)}');
 
     final response = await http.post(url);
 

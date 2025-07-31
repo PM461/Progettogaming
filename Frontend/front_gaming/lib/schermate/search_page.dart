@@ -387,74 +387,93 @@ class _SearchPageState extends State<SearchPage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12.0),
-              child: GridView.builder(
-                itemCount: _filteredResults.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1 / 1,
-                ),
-                itemBuilder: (context, index) {
-                  final item = _filteredResults[index];
-                  final logoUrl = item['details']?['logo image'] as String? ??
-                      item['details']?['logo'] as String? ??
-                      item['details']?['image']?['logo'] as String?;
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  int crossAxisCount;
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Gamedatascreen(game: item),
+                  if (width < 400) {
+                    crossAxisCount = 2;
+                  } else if (width < 800) {
+                    crossAxisCount = 4;
+                  } else {
+                    crossAxisCount = 6;
+                  }
+
+                  return GridView.builder(
+                    itemCount: _filteredResults.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1 / 1,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = _filteredResults[index];
+                      final logoUrl =
+                          item['details']?['logo image'] as String? ??
+                              item['details']?['logo'] as String? ??
+                              item['details']?['image']?['logo'] as String?;
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => Gamedatascreen(game: item),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: logoUrl != null
+                                      ? (logoUrl.toLowerCase().endsWith('.svg')
+                                          ? ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: NetworkSvgWidget(
+                                                  url: logoUrl),
+                                            )
+                                          : ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: Image.network(
+                                                logoUrl,
+                                                fit: BoxFit.contain,
+                                                width: double.infinity,
+                                              ),
+                                            ))
+                                      : const Icon(Icons.videogame_asset,
+                                          size: 40),
+                                ),
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Text(
+                                  item['label']?.toString() ?? 'Senza nome',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ),
                         ),
                       );
                     },
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: logoUrl != null
-                                  ? (logoUrl.toLowerCase().endsWith('.svg')
-                                      ? ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: NetworkSvgWidget(url: logoUrl),
-                                        )
-                                      : ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: Image.network(
-                                            logoUrl,
-                                            fit: BoxFit.contain,
-                                            width: double.infinity,
-                                          ),
-                                        ))
-                                  : const Icon(Icons.videogame_asset, size: 40),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              item['label']?.toString() ?? 'Senza nome',
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
                   );
                 },
               ),

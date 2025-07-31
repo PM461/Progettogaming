@@ -5,10 +5,12 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
+
 MONGO_URI = os.getenv("MONGO_URI")
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["progetto_gaming"]
 raccomandazioni_collection = db["raccomandazioni"]
+games_collection =db["games"]
 
 # Definisci tutte le collections qui
 users_collection = db["users"]
@@ -125,3 +127,43 @@ async def get_raccomandazione(user_id: str):
         raccomandazione["user_id"] = str(raccomandazione["user_id"])
 
     return {"raccomandazione": raccomandazione}
+
+
+
+
+@router.get("/get-raccomandazioni")
+async def get_raccomandazioni(user_id: str):
+    raccomandazione = await raccomandazioni_collection.find_one({"user_id": user_id})
+    if not raccomandazione:
+        raise HTTPException(status_code=404, detail="Raccomandazione non trovata per l'utente specificato")
+
+    raccomandazione["_id"] = str(raccomandazione["_id"])
+    if "user_id" in raccomandazione:
+        raccomandazione["user_id"] = str(raccomandazione["user_id"])
+
+    recommendations = raccomandazione.get("recommendations", {})
+    detailed_recommendations = {}
+
+    for list_name, game_ids in recommendations.items():
+        # Evita problemi se per caso la lista non è una lista
+        if not isinstance(game_ids, list):
+            detailed_recommendations[list_name] = []
+            continue
+
+        # Recupera i dettagli dei giochi dal DB
+        cursor = games_collection.find({"_id": {"$in": game_ids}})
+        giochi_dettagliati = await cursor.to_list(length=None)
+
+        # Converti ObjectId in stringa
+        for game in giochi_dettagliati:
+            if "_id" in game:
+                # Nel tuo caso _id è una stringa (esempio Q1330234), ma se fosse ObjectId convertilo:
+                if not isinstance(game["_id"], str):
+                    game["_id"] = str(game["_id"])
+
+        detailed_recommendations[list_name] = giochi_dettagliati
+
+    raccomandazione["recommendations"] = detailed_recommendations
+
+    return {"raccomandazione": raccomandazione}
+

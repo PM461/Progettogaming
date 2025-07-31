@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:front_gaming/main.dart';
-import 'package:front_gaming/schermate/carosello_raccomandazioni.dart';
+
 import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:front_gaming/schermate/gamedetail.dart';
 import 'package:front_gaming/services/auth_service.dart';
+import 'package:front_gaming/services/drag.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,33 +41,34 @@ class MainScreenState extends State<MainScreen> {
     _pages.add(const ProfilePage()); // Profilo
   }
 
-Future<void> _loadRecommendations() async {
-  final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getString('user_id');
-  const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+  Future<void> _loadRecommendations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
-  if (userId == null) return;
+    if (userId == null) return;
 
-  try {
-    final res = await http.get(Uri.parse(
-        '$apiBaseUrl/api/users/get-raccomandazione?user_id=$userId'));
-    if (res.statusCode == 200) {
-      final data = jsonDecode(utf8.decode(res.bodyBytes));
-      final idsRaccomandati = List<String>.from(
-          data['raccomandazione']['recommendations']['raccomandati']);
-      final idsNuovi = List<String>.from(
-          data['raccomandazione']['recommendations']['nuovi_simili']);
+    try {
+      final res = await http.get(Uri.parse(
+          '$apiBaseUrl/api/users/get-raccomandazioni?user_id=$userId')); // usa la nuova API
 
-      raccomandati = await _fetchGamesByIds(idsRaccomandati, apiBaseUrl);
-      nuoviSimili = await _fetchGamesByIds(idsNuovi, apiBaseUrl);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        final raccomandazione = data['raccomandazione'] ?? {};
+        final recommendations = raccomandazione['recommendations'] ?? {};
 
-      setState(() {});
+        // Ora ogni lista è già una lista di giochi dettagliati
+        raccomandati = List<Map<String, dynamic>>.from(
+            recommendations['raccomandati'] ?? []);
+        nuoviSimili = List<Map<String, dynamic>>.from(
+            recommendations['nuovi_simili'] ?? []);
+
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Errore nel caricamento delle raccomandazioni: $e');
     }
-  } catch (e) {
-    debugPrint('Errore nel caricamento delle raccomandazioni: $e');
   }
-}
-
 
   Future<List<Map<String, dynamic>>> _fetchGamesByIds(
       List<String> ids, String baseUrl) async {
@@ -153,10 +155,14 @@ Future<void> _loadRecommendations() async {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 10),
-          RecommendationCarousel(
-              title: "🎮 Raccomandati per te", games: raccomandati),
-          RecommendationCarousel(
-              title: "🆕 Nuovi simili ai tuoi gusti", games: nuoviSimili),
+          DraggableGameList(
+            title: "🎮 Raccomandati per te",
+            games: raccomandati,
+          ),
+          DraggableGameList(
+            title: "🆕 Nuovi aggiunti simili ai tuoi gusti",
+            games: nuoviSimili,
+          ),
           const SizedBox(height: 20),
         ],
       ),

@@ -256,137 +256,148 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
-                  GridView.count(
-                    crossAxisCount: 6,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: 1 / 1.3,
-                    children: games.map((game) {
-                      return Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      GameDetailScreen(game: game),
-                                ),
-                              );
-                            },
-                            child: Card(
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    flex: 5,
-                                    child: ClipRRect(
-                                      borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(12)),
-                                      child: game.logoImage != null
-                                          ? Image.network(
-                                              game.logoImage!,
-                                              fit: BoxFit.contain,
-                                            )
-                                          : Container(
-                                              color: Colors.grey.shade300,
-                                              child: const Icon(
-                                                  Icons.videogame_asset,
-                                                  size: 60,
-                                                  color: Colors.grey),
-                                            ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            game.label,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${game.achievements.length} obiettivi',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.maxWidth;
 
-                          // Pulsante elimina solo se NON siamo nella lista "Tutti i giochi"
-                          if (listName != "Tutti i giochi")
-                            Positioned(
-                              bottom: 4,
-                              right: 4,
-                              child: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () async {
-                                  // TODO: Implementa la logica di rimozione dalla lista
-                                  // Per esempio, mostra dialog di conferma e chiama API per rimuovere il gioco dalla lista
-                                  final confirmed = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Rimuovi gioco'),
-                                      content: Text(
-                                          'Sei sicuro di voler rimuovere "${game.label}" dalla lista "$listName"?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, false),
-                                          child: const Text('Annulla'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, true),
-                                          child: const Text('Rimuovi'),
-                                        ),
-                                      ],
+                      int crossAxisCount;
+                      if (width < 400) {
+                        crossAxisCount = 2; // schermi piccoli
+                      } else if (width < 800) {
+                        crossAxisCount = 4; // tablet o schermi medi
+                      } else {
+                        crossAxisCount = 6; // schermi grandi
+                      }
+
+                      return GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        childAspectRatio: 1 / 1.3,
+                        children: games.map((game) {
+                          // qui metti il codice delle tue card, come già avevi
+                          return Stack(
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          GameDetailScreen(game: game),
                                     ),
                                   );
-
-                                  if (confirmed == true) {
-                                    // Chiama la funzione per rimuovere il gioco dalla lista
-                                    await _removeGameFromList(
-                                        game.gameId, listName);
-
-                                    // Ricarica i dati per aggiornare la UI
-                                    setState(() {
-                                      futureListsWithGames =
-                                          fetchListsAndGames();
-                                    });
-                                  }
                                 },
+                                child: Card(
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        flex: 5,
+                                        child: ClipRRect(
+                                          borderRadius:
+                                              const BorderRadius.vertical(
+                                                  top: Radius.circular(12)),
+                                          child: game.logoImage != null
+                                              ? Image.network(
+                                                  game.logoImage!,
+                                                  fit: BoxFit.contain,
+                                                )
+                                              : Container(
+                                                  color: Colors.grey.shade300,
+                                                  child: const Icon(
+                                                      Icons.videogame_asset,
+                                                      size: 60,
+                                                      color: Colors.grey),
+                                                ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                game.label,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleMedium
+                                                    ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${game.achievements.length} obiettivi',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                        ],
+                              if (listName != "Tutti i giochi")
+                                Positioned(
+                                  bottom: 4,
+                                  right: 4,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () async {
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Rimuovi gioco'),
+                                          content: Text(
+                                              'Sei sicuro di voler rimuovere "${game.label}" dalla lista "$listName"?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text('Annulla'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              child: const Text('Rimuovi'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirmed == true) {
+                                        await _removeGameFromList(
+                                            game.gameId, listName);
+                                        setState(() {
+                                          futureListsWithGames =
+                                              fetchListsAndGames();
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                            ],
+                          );
+                        }).toList(),
                       );
-                    }).toList(),
+                    },
                   ),
                   const SizedBox(height: 32),
                 ],

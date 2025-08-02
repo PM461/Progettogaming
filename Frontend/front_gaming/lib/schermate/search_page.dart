@@ -7,7 +7,9 @@ import 'package:front_gaming/services/image_services.dart';
 import 'package:front_gaming/services/profile_service.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  final String? query;
+
+  const SearchPage({super.key, this.query});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -17,6 +19,7 @@ class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _annoController = TextEditingController();
   final TextEditingController _sviluppatoreController = TextEditingController();
+  static const String _genereTutti = 'Tutti';
 
   List<dynamic> _searchResults = [];
   List<dynamic> _filteredResults = [];
@@ -26,7 +29,7 @@ class _SearchPageState extends State<SearchPage> {
   Set<String> availableGeneri = {};
   Set<String> availableAnni = {};
   Set<String> availableSviluppatori = {};
-  String? _selectedGenere = 'Tutti';
+  String? _selectedGenere = _genereTutti;
 
   // Lista generi esempio, puoi adattarla
   final List<String> generi = [
@@ -63,6 +66,11 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _loadProfileImage();
     _loadGeneri();
+
+    if (widget.query != null && widget.query!.trim().isNotEmpty) {
+      _searchController.text = widget.query!;
+      searchGame(widget.query!);
+    }
   }
 
   Future<void> _loadGeneri() async {
@@ -75,14 +83,14 @@ class _SearchPageState extends State<SearchPage> {
         final List<dynamic> genresList = data['genres'];
         setState(() {
           availableGeneri = {
-            'Tutti'
+            _genereTutti
           }; // sempre aggiungi "Tutti" come prima voce
           for (var g in genresList) {
             if (g['label'] != null && g['label'].toString().isNotEmpty) {
               availableGeneri.add(g['label'].toString());
             }
           }
-          _selectedGenere = 'Tutti'; // default selezionato
+          _selectedGenere = _genereTutti;
         });
       } else {
         print('Errore caricamento generi: ${response.statusCode}');
@@ -154,7 +162,7 @@ class _SearchPageState extends State<SearchPage> {
 
         setState(() {
           _searchResults = results;
-          availableGeneri = {'tutti'};
+          availableGeneri = {_genereTutti}; // usa la costante
           availableGeneri.addAll(generiSet);
           availableAnni = anniSet;
           availableSviluppatori = sviluppatoriSet;
@@ -162,7 +170,7 @@ class _SearchPageState extends State<SearchPage> {
           // Reset selezione genere se non più valida
           if (_selectedGenere == null ||
               !availableGeneri.contains(_selectedGenere!.toLowerCase())) {
-            _selectedGenere = 'tutti';
+            _selectedGenere = _genereTutti;
           }
 
           if (!availableAnni.contains(_annoController.text)) {
@@ -206,7 +214,7 @@ class _SearchPageState extends State<SearchPage> {
     // Genere
     if (_selectedGenere != null &&
         _selectedGenere!.isNotEmpty &&
-        _selectedGenere != 'tutti') {
+        _selectedGenere!.toLowerCase() != _genereTutti.toLowerCase()) {
       filtered = filtered.where((game) {
         dynamic rawGenere =
             game['details']?['genere'] ?? game['details']?['genre'] ?? '';

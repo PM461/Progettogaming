@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:front_gaming/schermate/gamedetail.dart';
 import 'package:front_gaming/schermate/profilescreen.dart';
+import 'package:front_gaming/schermate/splashscreen.dart';
 import 'package:front_gaming/services/profile_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -27,12 +28,66 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Login Demo',
+      title: 'GameHub',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 6, 10, 139)),
-        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Color.fromARGB(255, 26, 26, 26),
+        colorScheme: const ColorScheme.dark(
+          primary: Color.fromARGB(255, 0, 0, 0),
+          secondary: Colors.grey,
+          background: Colors.black,
+          surface: Colors.grey,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onBackground: Colors.white,
+          onSurface: Colors.white,
+        ),
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 132, 132, 132)),
+          bodyMedium: TextStyle(
+              fontSize: 16, color: Color.fromARGB(179, 255, 255, 255)),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color.fromARGB(255, 214, 205, 205),
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[900],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color.fromARGB(255, 93, 93, 93)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide:
+                BorderSide(color: Color.fromARGB(255, 238, 63, 208), width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          labelStyle: const TextStyle(color: Color.fromARGB(255, 248, 179, 225)),
+          hintStyle: const TextStyle(color: Colors.white38),
+        ),
+        cardTheme: CardTheme(
+          color: Colors.grey[850],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 4,
+          margin: const EdgeInsets.all(8),
+        ),
       ),
-      initialRoute: '/',
+      initialRoute: '/splash',
       routes: {
         '/': (context) => const MyHomePage(title: 'Benvenuto'),
         '/main': (context) => const MainScreen(),
@@ -40,6 +95,7 @@ class MyApp extends StatelessWidget {
         '/library': (context) => const MyLibraryScreen(),
         '/details': (context) => const Placeholder(),
         '/profile': (context) => const ProfileScreen(),
+        '/splash': (context) => const SplashScreen(),
       },
     );
   }
@@ -54,61 +110,94 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Future<void> _loadProfileImage() async {
-    setState(() {
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _listenForToken();
-    _checkLogin();
-    _loadProfileImage();
-  }
-
-  void _listenForToken() {
-    html.window.onMessage.listen((event) async {
-      final data = event.data;
-      if (data != null && data.toString().startsWith("access_token=")) {
-        final token = data.toString().split("access_token=")[1];
-        try {
-          await AuthService.saveToken(token);
-        } catch (e) {
-          print('Errore nel salvataggio token e user_id: $e');
-        }
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/main');
-      }
-    });
-  }
-
-  void _checkLogin() async {
-    bool loggedIn = await AuthService.isLoggedIn();
-    if (loggedIn && mounted) {
-      Navigator.pushReplacementNamed(context, '/main');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const ElevatedButton(
-              onPressed: AuthService.googleLogin,
-              child: Text("Login con Google"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/login');
-              },
-              child: const Text("Login classico"),
-            ),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo o icona simbolica
+              const Icon(Icons.sports_esports,
+                  size: 100, color: Colors.amberAccent),
+              const SizedBox(height: 30),
+
+              // Titolo e descrizione
+              const Text(
+                'GameHub - Il tuo universo videoludico',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amberAccent,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Organizza i giochi che hai completato, registra i tuoi obiettivi, '
+                'scopri cosa stanno giocando gli altri e unisciti alla community dei veri gamer. '
+                'GameHub è il tuo punto di riferimento su web e mobile per tutto ciò che è gaming.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+
+              // Pulsante login Google
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await AuthService.googleLogin(); // Aggiungi "await" e "()"
+                  Navigator.pushNamed(
+                      context, '/splash'); // Navigazione dopo il login
+                },
+                icon: const Icon(Icons.login),
+                label: const Text("Login con Google"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Pulsante login classico
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login');
+                },
+                child: const Text("Login classico"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  textStyle: const TextStyle(fontSize: 16),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Pulsante registrazione solo se non loggato
+
+              TextButton(
+                onPressed: () {
+                  // Dovrai creare questa schermata e route '/register'
+                  Navigator.pushNamed(context, '/register');
+                },
+                child: const Text(
+                  "Non hai un account? Registrati",
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

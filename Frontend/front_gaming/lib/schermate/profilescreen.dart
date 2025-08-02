@@ -37,6 +37,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_id');
+    await prefs.remove('profile_image');
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/');
+  }
+
   Future<void> _loadSteamId() async {
     if (userId == null) return;
     final steamId = await _controller.loadSteamId(userId!);
@@ -267,6 +276,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label: const Text('Elimina profilo'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  textStyle: const TextStyle(fontSize: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _logout,
+                icon: const Icon(Icons.logout),
+                label: const Text('Logout'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey,
                   foregroundColor: Colors.white,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

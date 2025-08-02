@@ -39,69 +39,73 @@ class _DraggableGameListState extends State<DraggableGameList> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            widget.title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-        SizedBox(
-          height: 200,
-          child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(
-              dragDevices: {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.mouse,
-              },
+    
+    return Container(
+      color: Theme.of(context).primaryColorDark,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              widget.title,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _games.length,
-              itemBuilder: (context, index) {
-                final game = _games[index];
+          ),
+          SizedBox(
+            height: 200,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                },
+              ),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _games.length,
+                itemBuilder: (context, index) {
+                  final game = _games[index];
 
-                return DragTarget<int>(
-                  onWillAccept: (fromIndex) => fromIndex != index,
-                  onAccept: (fromIndex) {
-                    setState(() {
-                      final moved = _games.removeAt(fromIndex);
-                      _games.insert(index, moved);
-                    });
-                  },
-                  builder: (context, candidateData, rejectedData) {
-                    return LongPressDraggable<int>(
-                      data: index,
-                      feedback: Material(
-                        elevation: 10,
-                        borderRadius: BorderRadius.circular(12),
-                        child: _buildGameCard(game, dragging: true),
-                      ),
-                      childWhenDragging: Opacity(
-                        opacity: 0.4,
-                        child: _buildGameCard(game),
-                      ),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          border: candidateData.isNotEmpty
-                              ? Border.all(color: Colors.amber, width: 2)
-                              : null,
+                  return DragTarget<int>(
+                    onWillAccept: (fromIndex) => fromIndex != index,
+                    onAccept: (fromIndex) {
+                      setState(() {
+                        final moved = _games.removeAt(fromIndex);
+                        _games.insert(index, moved);
+                      });
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      return LongPressDraggable<int>(
+                        data: index,
+                        feedback: Material(
+                          elevation: 10,
                           borderRadius: BorderRadius.circular(12),
+                          child: _buildGameCard(game, dragging: true),
                         ),
-                        child: _buildGameCard(game),
-                      ),
-                    );
-                  },
-                );
-              },
+                        childWhenDragging: Opacity(
+                          opacity: 0.4,
+                          child: _buildGameCard(game),
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            border: candidateData.isNotEmpty
+                                ? Border.all(color: Colors.amber, width: 2)
+                                : null,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: _buildGameCard(game),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -164,12 +168,10 @@ class _DraggableGameListState extends State<DraggableGameList> {
         height: 180,
         margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: dragging ? Colors.grey[200] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: dragging
               ? [
                   const BoxShadow(
-                    color: Colors.black26,
                     blurRadius: 8,
                     offset: Offset(0, 3),
                   )

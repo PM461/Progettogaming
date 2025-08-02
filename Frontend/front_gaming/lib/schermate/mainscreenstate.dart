@@ -154,16 +154,17 @@ class MainScreenState extends State<MainScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 10),
+          const SizedBox(height: 30),
           DraggableGameList(
             title: "🎮 Raccomandati per te",
             games: raccomandati,
           ),
+          const SizedBox(height: 30),
           DraggableGameList(
             title: "🆕 Nuovi aggiunti simili ai tuoi gusti",
             games: nuoviSimili,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
         ],
       ),
     );

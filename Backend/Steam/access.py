@@ -274,3 +274,156 @@ def update_steam_data():
             time.sleep(1)
 
     return {"status": "completato", "aggiornati": updated}
+
+
+
+
+@router.post("/check_or_add_game")
+def check_or_add_game(name: str = None, steam_appid: int = None):
+    if not name and not steam_appid:
+        raise HTTPException(status_code=400, detail="Devi fornire almeno il nome o lo steam_appid")
+
+    # Cerca gioco per nome o per steam_appid
+    query = []
+    if name:
+        query.append({"label": {"$regex": f"^{name}$", "$options": "i"}})
+    if steam_appid:
+        query.append({"_id": str(steam_appid)})  # Cerca per ID steam come _id
+
+    existing_game = None
+    if query:
+        existing_game = games_collection.find_one({"$or": query})
+
+    if existing_game:
+        existing_game["_id"] = str(existing_game["_id"])
+        return {"status": "exists", "game": existing_game}
+
+    if not steam_appid:
+        raise HTTPException(status_code=400, detail="Per aggiungere un gioco da Steam serve lo steam_appid")
+
+    # Chiama Steam API
+    url = f"https://store.steampowered.com/api/appdetails?appids={steam_appid}"
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore chiamata Steam API: {e}")
+
+    if not data or not data.get(str(steam_appid), {}).get("success", False):
+        raise HTTPException(status_code=404, detail="Gioco non trovato su Steam")
+
+    app_data = data[str(steam_appid)]["data"]
+
+    game_doc = {
+        "_id": str(steam_appid),  # Steam ID come _id (stringa)
+        "label": app_data.get("name", "Senza nome"),
+        "details": {
+            "editore": app_data.get("publishers", []),
+            "genere": [g["description"] for g in app_data.get("genres", [])],
+            "sviluppatore": app_data.get("developers", []),
+            "serie": app_data.get("series", "N/A") if "series" in app_data else "N/A",
+            "piattaforma": [k for k, v in app_data.get("platforms", {}).items() if v],
+            "modalità di gioco": ", ".join([c.get("description", "") for c in app_data.get("categories", [])]) if app_data.get("categories") else "N/A",
+            "dispositivo di ingresso": "N/A",
+            "data di pubblicazione": app_data.get("release_date", {}).get("date", "N/A"),
+            "distributore": app_data.get("publishers", []),
+            "sito web ufficiale": app_data.get("website", "N/A"),
+            "classificazione USK": app_data.get("content_descriptions", {}).get("notes", "N/A"),
+            "identificativo Steam": str(steam_appid),
+            "identificativo GOG.com": "N/A",
+            "logo image": app_data.get("header_image"),
+        },
+        "obiettivi_steam": []
+    }
+
+    # Inserisci nel DB
+    try:
+        games_collection.insert_one(game_doc)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore durante l'inserimento nel DB: {e}")
+
+    return {"status": "added", "game": game_doc}
+
+
+@router.post("/sync_steam_games")
+def sync_steam_games(limit: int = 10, offset: int = 0):
+    """
+    Scarica giochi da Steam (tramite GetAppList), verifica se esistono nel DB.
+    Se non esistono, li aggiunge mappando i campi correttamente.
+    """
+    steam_list_url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+    try:
+        response = requests.get(steam_list_url, timeout=10)
+        all_apps = response.json().get("applist", {}).get("apps", [])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore nella chiamata a Steam GetAppList: {e}")
+
+    if not all_apps:
+        raise HTTPException(status_code=500, detail="Nessun gioco ottenuto da Steam")
+
+    selected_apps = all_apps[offset:offset + limit]
+    added = []
+    skipped = []
+
+    for app in selected_apps:
+        appid = app["appid"]
+        name = app["name"]
+
+        # Verifica se già nel DB
+        exists = games_collection.find_one({
+            "$or": [
+                {"label": {"$regex": f"^{name}$", "$options": "i"}},
+                {"details.identificativo Steam": str(appid)}
+            ]
+        })
+
+        if exists:
+            skipped.append({"appid": appid, "name": name})
+            continue
+
+        # Ottieni dettagli
+        try:
+            details_url = f"https://store.steampowered.com/api/appdetails?appids={appid}"
+            details_response = requests.get(details_url, timeout=10)
+            game_data = details_response.json()
+            if not game_data or not game_data.get(str(appid), {}).get("success", False):
+                skipped.append({"appid": appid, "name": name, "reason": "Dati non disponibili"})
+                continue
+
+            app_data = game_data[str(appid)]["data"]
+        except Exception as e:
+            skipped.append({"appid": appid, "name": name, "reason": f"Errore fetch: {e}"})
+            continue
+
+        # Mappatura ai tuoi campi
+        game_doc = {
+            "label": app_data.get("name", name),
+            "details": {
+                "editore": app_data.get("publishers", []),
+                "genere": [g["description"] for g in app_data.get("genres", [])] if "genres" in app_data else [],
+                "sviluppatore": app_data.get("developers", []),
+                "serie": "N/A",
+                "piattaforma": [k for k, v in app_data.get("platforms", {}).items() if v],
+                "modalità di gioco": ", ".join([c.get("description", "") for c in app_data.get("categories", [])]) if "categories" in app_data else "N/A",
+                "dispositivo di ingresso": "N/A",
+                "data di pubblicazione": app_data.get("release_date", {}).get("date", "N/A"),
+                "distributore": app_data.get("publishers", []),
+                "sito web ufficiale": app_data.get("website", "N/A"),
+                "classificazione USK": app_data.get("content_descriptions", {}).get("notes", "N/A"),
+                "identificativo Steam": str(appid),
+                "identificativo GOG.com": "N/A",
+                "logo image": app_data.get("header_image"),
+            },
+            "obiettivi_steam": []  # Potresti estendere con Steam WebAPI
+        }
+
+        # Inserisci nel DB
+        games_collection.insert_one(game_doc)
+        added.append({"appid": appid, "name": app_data.get("name", name)})
+
+    return {
+        "added_count": len(added),
+        "skipped_count": len(skipped),
+        "added": added,
+        "skipped": skipped
+    }

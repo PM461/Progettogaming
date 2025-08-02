@@ -42,6 +42,7 @@ dependencies:
   flutter_web_auth: ^0.5.0
   google_sign_in: ^6.2.1
   flutter_svg: ^2.0.9
+  material_symbols_icons: ^4.2801.1
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +71,9 @@ flutter:
     - images/steam.png
     - images/steam_gray.png
     - images/propic/
+    - images/logo2.png
+    - images/logo1.png
+    - images/logo3.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

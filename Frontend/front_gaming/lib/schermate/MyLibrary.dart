@@ -359,7 +359,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
                                   right: 4,
                                   child: IconButton(
                                     icon: const Icon(Icons.delete,
-                                        color: Colors.red),
+                                        color: Color.fromARGB(255, 54, 165, 244)),
                                     onPressed: () async {
                                       final confirmed = await showDialog<bool>(
                                         context: context,

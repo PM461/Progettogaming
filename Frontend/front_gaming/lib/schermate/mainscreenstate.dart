@@ -17,6 +17,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front_gaming/services/image_services.dart';
 import 'search_page.dart';
 
+const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
 class MainScreenState extends State<MainScreen> {
   late Future<String> futureName;
   List<Map<String, dynamic>> raccomandati = [];
@@ -33,18 +35,16 @@ class MainScreenState extends State<MainScreen> {
     super.initState();
     futureName = loadName();
     _loadProfileImage();
-    _loadRecommendations(); // <--- AGGIUNTA
-
-    // Inizializza le pagine per ogni tab
+    _loadRecommendations();
+    _checkFirstAccessAndShowPopup(); // <--- qui
     _pages.add(_buildHomeContent());
-    _pages.add(const MyLibraryScreen()); // Libreria
-    _pages.add(const ProfilePage()); // Profilo
+    _pages.add(const MyLibraryScreen());
+    _pages.add(const ProfilePage());
   }
 
   Future<void> _loadRecommendations() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('user_id');
-    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
     if (userId == null) return;
 
@@ -70,6 +70,200 @@ class MainScreenState extends State<MainScreen> {
     }
   }
 
+  void _showClassicGamePopup(String userId) {
+    final capturedContext = context;
+
+    http.get(Uri.parse('$apiBaseUrl/api/users/get-game-guide')).then((res) {
+      if (res.statusCode == 200) {
+        final guide = jsonDecode(res.body);
+        final classicGamesByCategory =
+            guide['classic_games'] as Map<String, dynamic>;
+
+        // Unisci tutte le liste in una sola
+        final classicGames = classicGamesByCategory.values
+            .expand((categoryList) => categoryList)
+            .map<Map<String, dynamic>>((e) => e as Map<String, dynamic>)
+            .toList();
+
+        List<String> selectedIds = [];
+
+        showDialog(
+          context: capturedContext,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return PopScope(
+              canPop: false,
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return Dialog(
+                    insetPadding: EdgeInsets.zero,
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    child: Scaffold(
+                      appBar: AppBar(
+                        automaticallyImplyLeading: false,
+                        title:
+                            const Text('Benvenuto! Aggiungi giochi classici'),
+                        centerTitle: true,
+                      ),
+                      body: Column(
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                                'Scegli i giochi da aggiungere alla tua libreria iniziale:'),
+                          ),
+                          Expanded(
+                            child: GridView.builder(
+                              padding: const EdgeInsets.all(12),
+                              itemCount: classicGames.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 1,
+                              ),
+                              itemBuilder: (context, index) {
+                                final game = classicGames[index];
+                                final gameId = game['wikidata_id'];
+                                final isSelected = selectedIds.contains(gameId);
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      if (isSelected) {
+                                        selectedIds.remove(gameId);
+                                      } else {
+                                        selectedIds.add(gameId);
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? Colors.blueAccent.withOpacity(0.6)
+                                          : Colors.white12,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? Colors.blue
+                                            : Colors.white24,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Immagine del gioco
+                                        if (game.containsKey('image_url') &&
+                                            game['image_url'] != null)
+                                          Expanded(
+                                            child: Image.network(
+                                              game['image_url'],
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (context, error,
+                                                      stackTrace) =>
+                                                  const Icon(Icons.broken_image,
+                                                      size: 48,
+                                                      color: Colors.white30),
+                                            ),
+                                          )
+                                        else
+                                          const Icon(Icons.videogame_asset,
+                                              size: 48, color: Colors.white),
+
+                                        const SizedBox(height: 8),
+                                        // Titolo del gioco
+                                        if (game.containsKey('title') &&
+                                            game['title'] != null)
+                                          Text(
+                                            game['title'],
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          )
+                                        else
+                                          Text(
+                                            gameId,
+                                            style: const TextStyle(
+                                                color: Colors.white),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: ElevatedButton(
+                              onPressed: selectedIds.length >= 4
+                                  ? () async {
+                                      try {
+                                        // Aggiungi ogni gioco singolarmente
+                                        for (final gameId in selectedIds) {
+                                          final addRes = await http.post(
+                                            Uri.parse(
+                                                '$apiBaseUrl/user/$userId/add_game/$gameId'),
+                                          );
+                                          if (addRes.statusCode != 200) {
+                                            throw Exception(
+                                                'Errore aggiunta gioco $gameId');
+                                          }
+                                        }
+
+                                        // Imposta isfirst a 1
+                                        final isFirstRes = await http.post(
+                                          Uri.parse(
+                                              '$apiBaseUrl/user/$userId/set-isfirst'),
+                                          headers: {
+                                            'Content-Type': 'application/json'
+                                          },
+                                          body: jsonEncode({'isfirst': 1}),
+                                        );
+
+                                        if (isFirstRes.statusCode == 200) {
+                                          Navigator.of(dialogContext).pop();
+
+                                          // Reindirizza alla home (modifica qui se usi Navigator, esempio)
+                                          Navigator.of(capturedContext)
+                                              .pushReplacementNamed('/main');
+                                        } else {
+                                          throw Exception(
+                                              'Errore aggiornamento isfirst');
+                                        }
+                                      } catch (e) {
+                                        debugPrint(
+                                            'Errore durante l\'aggiunta giochi o aggiornamento isfirst: $e');
+                                        // Qui puoi mostrare un alert o snackbar con errore
+                                      }
+                                    }
+                                  : null,
+                              child: const Text('Aggiungi alla libreria'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      }
+    }).catchError((e) {
+      debugPrint('Errore caricamento game guide: $e');
+    });
+  }
+
   Future<List<Map<String, dynamic>>> _fetchGamesByIds(
       List<String> ids, String baseUrl) async {
     final List<Map<String, dynamic>> games = [];
@@ -92,11 +286,47 @@ class MainScreenState extends State<MainScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (ModalRoute.of(context)?.isCurrent == true && !_hasLoadedOnce) {
-      _loadProfileImage(); // solo al primo ingresso
+    if (!_hasLoadedOnce) {
       _hasLoadedOnce = true;
-    } else if (ModalRoute.of(context)?.isCurrent == true) {
-      _loadProfileImage(); // ricarica se ritorni
+      _loadProfileImage();
+
+      // Mostra il popup dopo che il widget è visibile
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkFirstAccessAndShowPopup();
+      });
+    }
+  }
+
+  Future<void> _checkFirstAccessAndShowPopup() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+
+    if (token == null) return;
+
+    try {
+      final res = await http.get(
+        Uri.parse('$apiBaseUrl/api/auth/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+
+        final isFirst = data['isfirst'] == 0;
+        final userId = data['_id']?.toString();
+
+        debugPrint('✅ isFirst from /auth/me = $isFirst');
+
+        if (isFirst && userId != null) {
+          _showClassicGamePopup(userId); // 🔁 usa direttamente
+        }
+      } else {
+        debugPrint('Errore nel fetch di /auth/me: ${res.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Errore nel controllo isfirst: $e');
     }
   }
 
@@ -110,7 +340,6 @@ class MainScreenState extends State<MainScreen> {
         _selectedImageName = imageName;
       });
     } else if (userId != null && userId.isNotEmpty) {
-      const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
       try {
         final response = await http.get(
           Uri.parse('$apiBaseUrl/api/users/get-propic?user_id=$userId'),

@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
             textStyle: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -64,18 +64,19 @@ class MyApp extends StatelessWidget {
           filled: true,
           fillColor: Colors.grey[900],
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(0),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Color.fromARGB(255, 93, 93, 93)),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(30),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide:
                 BorderSide(color: Color.fromARGB(255, 238, 63, 208), width: 2),
             borderRadius: BorderRadius.circular(12),
           ),
-          labelStyle: const TextStyle(color: Color.fromARGB(255, 248, 179, 225)),
+          labelStyle:
+              const TextStyle(color: Color.fromARGB(255, 248, 179, 225)),
           hintStyle: const TextStyle(color: Colors.white38),
         ),
         cardTheme: CardTheme(

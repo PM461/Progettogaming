@@ -77,6 +77,7 @@ async def auth_callback(request: Request):
             "email": user_info["email"],
             "name": user_info["name"],
             "picture": user_info.get("picture"),
+            "isfirst":0,
             "email_verified": user_info.get("email_verified", False)
         }
 
@@ -125,13 +126,29 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user:
             raise HTTPException(status_code=404, detail="Utente non trovato")
 
+        print(user.get("isfirst", 2))
         return {
             "email": user["email"],
             "name": user.get("name", ""),
             "picture": user.get("picture", None),
             "propic":0,
+            "isfirst":user.get("isfirst", 2),
             "_id": str(user["_id"]),  # restituisci anche l'id come stringa
         }
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Token non valido")
+    
+
+from bson import ObjectId
+
+@router.post("/user/{user_id}/set-isfirst")
+async def set_isfirst(user_id: str):
+    try:
+        users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"isfirst": 1}}
+        )
+        return {"message": "Campo isfirst aggiornato a 1"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore interno: {str(e)}")

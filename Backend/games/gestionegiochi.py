@@ -232,47 +232,43 @@ async def add_game(user_id: str, game_id: str):
     except Exception:
         raise HTTPException(status_code=400, detail="User ID non valido")
 
-    # Cerca il gioco sia per _id che per wikidata.id
-    
     game = games_collection.find_one({"_id": game_id})
-  
     if not game:
         raise HTTPException(status_code=404, detail="Gioco non trovato nel DB")
 
-    # Prendi gli obiettivi Steam se presenti
     steam_achievements = game.get("obiettivi_steam", [])
-    structured_achievements = [
-        {"name": ach.get("name"), "achieved": False} for ach in steam_achievements
-    ]
+    structured_achievements = [{"name": ach.get("name"), "achieved": False} for ach in steam_achievements]
 
-    # Verifica se l'utente ha già il gioco
     user_entry = user_games_collection.find_one({"user_id": user_obj_id})
+
     if not user_entry:
         user_games_collection.insert_one({
             "user_id": user_obj_id,
-            "games": [
-                {
-                    "game_id": game["_id"],
-                    "achievements": structured_achievements
-                }
-            ]
+            "games": [{
+                "game_id": game["_id"],
+                "achievements": structured_achievements
+            }]
         })
-    else:
-        for g in user_entry["games"]:
-            if g["game_id"] == game["_id"]:
-                raise HTTPException(status_code=409, detail="Gioco già presente per l’utente")
+        return {"status": "Gioco aggiunto", "game_id": str(game["_id"])}
 
-        user_games_collection.update_one(
-            {"user_id": user_obj_id},
-            {"$push": {
-                "games": {
-                    "game_id": game["_id"],
-                    "achievements": structured_achievements
-                }
-            }}
-        )
+    # Se il gioco è già presente, ritorna un messaggio di avviso senza errore
+    for g in user_entry["games"]:
+        if g["game_id"] == game["_id"]:
+            return {"status": "Gioco già presente", "game_id": str(game["_id"])}
+
+    # Altrimenti aggiungi il gioco
+    user_games_collection.update_one(
+        {"user_id": user_obj_id},
+        {"$push": {
+            "games": {
+                "game_id": game["_id"],
+                "achievements": structured_achievements
+            }
+        }}
+    )
 
     return {"status": "Gioco aggiunto", "game_id": str(game["_id"])}
+
 
 @router.delete("/user/{user_id}/remove_game/{game_id}")
 async def remove_game(user_id: str, game_id: str):
@@ -481,6 +477,8 @@ def remove_game_from_list(user_id: str, list_name: str = Query(..., description=
     )
 
     return {"message": f"Gioco rimosso dalla lista '{list_name}'"}
+
+
 
 @router.get("/game/{game_id}")
 def get_game_by_id(game_id: str):

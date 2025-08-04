@@ -39,7 +39,6 @@ class _DraggableGameListState extends State<DraggableGameList> {
 
   @override
   Widget build(BuildContext context) {
-    
     return Container(
       color: Theme.of(context).primaryColorDark,
       child: Column(
@@ -80,7 +79,7 @@ class _DraggableGameListState extends State<DraggableGameList> {
                         data: index,
                         feedback: Material(
                           elevation: 10,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(0),
                           child: _buildGameCard(game, dragging: true),
                         ),
                         childWhenDragging: Opacity(
@@ -93,7 +92,7 @@ class _DraggableGameListState extends State<DraggableGameList> {
                             border: candidateData.isNotEmpty
                                 ? Border.all(color: Colors.amber, width: 2)
                                 : null,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(0),
                           ),
                           child: _buildGameCard(game),
                         ),
@@ -138,7 +137,6 @@ class _DraggableGameListState extends State<DraggableGameList> {
             return Container(
               height: 200,
               width: 200,
-              color: randomColor,
               child: const Icon(Icons.broken_image),
             );
           },
@@ -148,7 +146,6 @@ class _DraggableGameListState extends State<DraggableGameList> {
       imageWidget = Container(
         height: 100,
         width: 100,
-        color: randomColor,
         child: const Icon(Icons.image),
       );
     }
@@ -168,7 +165,8 @@ class _DraggableGameListState extends State<DraggableGameList> {
         height: 180,
         margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          color: Color.fromARGB(255, 42, 81, 118),
+          borderRadius: BorderRadius.circular(0),
           boxShadow: dragging
               ? [
                   const BoxShadow(
@@ -183,11 +181,11 @@ class _DraggableGameListState extends State<DraggableGameList> {
           children: [
             ClipRRect(
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+                  const BorderRadius.vertical(top: Radius.circular(0)),
               child: imageWidget,
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(10.0),
               child: Text(
                 title,
                 maxLines: 2,

@@ -11,6 +11,7 @@ client = AsyncIOMotorClient(MONGO_URI)
 db = client["progetto_gaming"]
 raccomandazioni_collection = db["raccomandazioni"]
 games_collection =db["games"]
+user_games_collection =db["user_games"]
 
 # Definisci tutte le collections qui
 users_collection = db["users"]
@@ -167,3 +168,11 @@ async def get_raccomandazioni(user_id: str):
 
     return {"raccomandazione": raccomandazione}
 
+@router.get("/get-game-guide")
+async def get_game_guide():
+    raccomandazione = await user_games_collection.find_one({"_id": "game_guide"}, {"_id": 0})
+    
+    if not raccomandazione:
+        raise HTTPException(status_code=404, detail="Game guide non trovata")
+    
+    return raccomandazione

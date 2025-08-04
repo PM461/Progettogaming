@@ -61,6 +61,7 @@ async def register(email: str, password: str, name: str ):
         "password": hash_password(password),
         "name": name,
         "propic":0,
+        "isfirst":0,
         "data": datetime.now().strftime("%d/%m/%Y"), 
         "email_verified": False,
         "verification_token": verification_token

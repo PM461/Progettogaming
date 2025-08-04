@@ -20,117 +20,156 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _CustomAppBarState extends State<CustomAppBar> {
   final TextEditingController _searchController = TextEditingController();
+  bool _isSearchActive = false;
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final isSmall = width < 360;
+    final isSmall = width < 420;
     final isTablet = width > 600;
+    bool _isSearching = false;
+
+    Widget _buildSearchBar({bool autofocus = false}) {
+      return Expanded(
+        child: Container(
+          height: 35,
+          margin: const EdgeInsets.symmetric(horizontal: 10),
+          child: TextField(
+            controller: _searchController,
+            autofocus: autofocus,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.search, color: Colors.white),
+              hintText: 'Cerca...',
+              hintStyle: const TextStyle(color: Colors.white70),
+              fillColor: Colors.white12,
+              filled: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 5),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onSubmitted: (value) {
+              setState(() => _isSearchActive = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchPage(query: value),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
 
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.primary,
       elevation: 4,
       automaticallyImplyLeading: false,
-      toolbarHeight: dimensione, // Altezza effettiva dell’AppBar
+      toolbarHeight: dimensione,
       flexibleSpace: SafeArea(
         child: Container(
-          height:
-              dimensione, // Questo è FONDAMENTALE per centrare verticalmente
+          height: dimensione,
           padding: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // LOGO
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/main'),
-                child: Image.asset(
-                  'images/logo2.png',
-                  height: isTablet ? 200 : 48,
-                  fit: BoxFit.contain,
+              if (!_isSearchActive || !isSmall) ...[
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/main'),
+                  child: Image.asset(
+                    'images/logo2.png',
+                    height: isTablet ? 200 : 48,
+                    fit: BoxFit.contain,
+                  ),
                 ),
-              ),
-
-              const SizedBox(width: 10),
+                SizedBox(width: isTablet ? 25 : 20),
+              ],
 
               // SEARCH BAR
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  height: 35,
-                  child: TextField(
-                    controller: _searchController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.search, color: Colors.white),
-                      hintText: 'Cerca...',
-                      hintStyle: const TextStyle(color: Colors.white70),
-                      fillColor: Colors.white12,
-                      filled: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    onSubmitted: (value) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SearchPage(query: value),
-                        ),
-                      );
+              // SEARCH BAR
+              if (!isSmall)
+                _buildSearchBar()
+              else if (_isSearchActive) ...[
+                _buildSearchBar(autofocus: true),
+                IconButton(
+                  icon: Icon(Icons.close, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      _isSearchActive = false;
+                      _searchController.clear();
+                    });
+                  },
+                ),
+              ] else
+                const Spacer(),
+
+              SizedBox(width: isTablet ? 25 : 20),
+              // AZIONI (solo se non in modalità ricerca attiva su schermo piccolo)
+              if (!_isSearchActive || !_isSearchActive) ...[
+                if (isSmall)
+                  IconButton(
+                    icon: Icon(Icons.search, color: Colors.white),
+                    tooltip: 'Cerca',
+                    onPressed: () {
+                      if (isSmall) {
+                        setState(() => _isSearchActive = true);
+                      }
                     },
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              // ICONA LIBRERIA
-              TextButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/library'),
-                icon: Icon(
-                  Icons.sports_esports_outlined,
-                  size: isTablet ? 40 : 28,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  isTablet ? 'Collezione' : '',
-                  style: TextStyle(
+                SizedBox(width: isTablet ? 25 : 0),
+                TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/library'),
+                  icon: Icon(
+                    Icons.sports_esports_outlined,
+                    size: isTablet ? 40 : 28,
                     color: Colors.white,
-                    fontSize: isTablet ? 18 : 8,
-                    fontWeight: FontWeight.w500,
                   ),
-                ),
-              ),
-
-              SizedBox(width: isTablet ? 10 : 5),
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_sharp,
-                  size: isTablet ? 30 : 28,
-                  color: Colors.white,
-                ),
-                tooltip: 'Notifiche',
-                onPressed: () {},
-              ),
-
-              SizedBox(width: isTablet ? 10 : 5),
-
-              // AVATAR
-              Tooltip(
-                message: 'Profilo',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(50),
-                  onTap: () => Navigator.pushNamed(context, '/profile'),
-                  child: CircleAvatar(
-                    radius: isTablet ? 24 : 22,
-                    backgroundImage: AssetImage(
-                      widget.selectedImageName != null
-                          ? 'images/propic/${widget.selectedImageName}.png'
-                          : 'images/propic/1.png',
+                  label: Text(
+                    isTablet ? 'Collezione' : '',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isTablet ? 18 : 0,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ),
+                Container(
+                  height: 30,
+                  width: 1,
+                  color: Colors.white24,
+                ),
+                SizedBox(width: isTablet ? 10 : 0),
+                IconButton(
+                  icon: Icon(
+                    Icons.notifications_sharp,
+                    size: isTablet ? 30 : 28,
+                    color: Colors.white,
+                  ),
+                  tooltip: 'Notifiche',
+                  onPressed: () {},
+                ),
+                SizedBox(width: isTablet ? 25 : 0),
+                Tooltip(
+                  message: 'Profilo',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(50),
+                    onTap: () => Navigator.pushNamed(context, '/profile'),
+                    child: CircleAvatar(
+                      radius: isTablet ? 24 : 20,
+                      backgroundImage: AssetImage(
+                        widget.selectedImageName != null
+                            ? 'images/propic/${widget.selectedImageName}.png'
+                            : 'images/propic/1.png',
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: isTablet ? 25 : 20)
+              ],
             ],
           ),
         ),

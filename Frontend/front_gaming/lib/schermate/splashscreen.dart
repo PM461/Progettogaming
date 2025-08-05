@@ -38,10 +38,15 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white, // o il colore che preferisci
+    return Scaffold(
+      backgroundColor:
+          const Color.fromARGB(255, 0, 0, 0), // o il colore che preferisci
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Image.asset(
+          'images/logow.gif',
+          width: 60,
+          height: 60,
+        ),
       ),
     );
   }

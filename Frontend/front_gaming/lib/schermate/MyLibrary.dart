@@ -232,7 +232,13 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
         future: futureListsWithGames,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Image.asset(
+                'images/logow.gif',
+                width: 60,
+                height: 60,
+              ),
+            );
           } else if (snapshot.hasError) {
             return Center(child: Text("Errore: ${snapshot.error}"));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -359,7 +365,8 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
                                   right: 4,
                                   child: IconButton(
                                     icon: const Icon(Icons.delete,
-                                        color: Color.fromARGB(255, 54, 165, 244)),
+                                        color:
+                                            Color.fromARGB(255, 54, 165, 244)),
                                     onPressed: () async {
                                       final confirmed = await showDialog<bool>(
                                         context: context,

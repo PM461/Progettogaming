@@ -59,7 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 20),
             _loading
-                ? const CircularProgressIndicator()
+                ? Image.asset(
+                    'images/logow.gif',
+                    width: 50,
+                    height: 50,
+                  )
                 : ElevatedButton(
                     onPressed: _login,
                     child: const Text('Login'),

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:front_gaming/services/profile_service.dart';
 import 'package:front_gaming/controllers/profile_controller.dart';
 import 'package:front_gaming/schermate/FriendLibraryScreen.dart';
+import 'dart:async';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,6 +28,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final id =
         (f['friend_id'] ?? f['user_id'] ?? f['id'] ?? f['_id'])?.toString();
     return id ?? '';
+  }
+
+  Widget _avatarFrom(Map<String, dynamic> u, {double radius = 20}) {
+    // prova vari campi comuni: picture / avatar / profile_image / profileImageUrl
+    final pic = (u['picture'] ??
+                u['avatar'] ??
+                u['profile_image'] ??
+                u['profileImageUrl'] ??
+                '')
+            ?.toString() ??
+        '';
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundImage: pic.isNotEmpty ? NetworkImage(pic) : null,
+      child: pic.isEmpty ? const Icon(Icons.person) : null,
+    );
+  }
+
+  int _notifCount = 0;
+  Timer? _notifTimer;
+
+  int get _friendRequestsCount => _incoming.length;
+
+// endpoint opzionale; va bene anche se non esiste (fallback a 0)
+  Future<int> _getUnreadNotifCountSafe() async {
+    try {
+      final uri = Uri.parse('$_apiBase/api/notifications/unread_count');
+      final res = await http.get(uri, headers: _headers);
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        final v = body['count'];
+        if (v is int) return v;
+        if (v is String) return int.tryParse(v) ?? 0;
+        if (v is num) return v.toInt();
+      }
+    } catch (_) {}
+    return 0;
+  }
+
+  Future<void> _recomputeBadge() async {
+    // somma richieste amici + eventuali notifiche generiche
+    final other = await _getUnreadNotifCountSafe();
+    final total = _friendRequestsCount + other;
+    if (!mounted) return;
+    setState(() => _notifCount = total);
   }
 
   bool _asBool(dynamic v) {
@@ -234,6 +281,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _boot();
+    // piccolo polling per aggiornare il badge ogni 30s
+    _notifTimer =
+        Timer.periodic(const Duration(seconds: 30), (_) => _recomputeBadge());
+  }
+
+  @override
+  void dispose() {
+    _notifTimer?.cancel();
+    _friendSearch.dispose();
+    super.dispose();
   }
 
   // ---------- Privacy amici ----------
@@ -361,6 +418,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _incoming = (data['incoming'] ?? []) as List<dynamic>;
             _outgoing = (data['outgoing'] ?? []) as List<dynamic>;
           });
+          await _recomputeBadge();
         }
       }
     } catch (_) {}
@@ -838,6 +896,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _openNotificationsSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.notifications),
+                    const SizedBox(width: 8),
+                    Text('Notifiche',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    if (_notifCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade600,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text('$_notifCount',
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_friendRequestsCount > 0)
+                  ListTile(
+                    leading: const Icon(Icons.person_add_alt_1),
+                    title: Text('Richieste d’amicizia: $_friendRequestsCount'),
+                    subtitle:
+                        const Text('Apri la sezione richieste per gestirle'),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      // qui puoi fare scroll alla sezione richieste, oppure niente
+                    },
+                  ),
+                if (_friendRequestsCount == 0)
+                  const Text('Nessuna richiesta d’amicizia'),
+                const SizedBox(height: 8),
+                // puoi aggiungere eventuali altre categorie...
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // ---------- Build ----------
   @override
   Widget build(BuildContext context) {
@@ -846,7 +959,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : 'images/propic/1.png';
 
     return Scaffold(
-      appBar: CustomAppBar(selectedImageName: _selectedImageName),
+      appBar: CustomAppBar(
+        selectedImageName: _selectedImageName,
+        onBellTap: _openNotificationsSheet, // opzionale: cosa succede al tap
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

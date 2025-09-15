@@ -4,6 +4,7 @@ import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:front_gaming/schermate/gamedetail.dart';
 import 'package:front_gaming/schermate/profilescreen.dart';
 import 'package:front_gaming/schermate/splashscreen.dart';
+import 'package:front_gaming/services/notifications_center.dart';
 import 'package:front_gaming/services/profile_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -16,8 +17,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:front_gaming/services/image_services.dart';
 import 'package:front_gaming/schermate/mainscreenstate.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Avvio polling notifiche (idempotente)
+  NotificationsCenter.instance.start();
   runApp(const MyApp());
 }
 

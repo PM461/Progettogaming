@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:front_gaming/models/game.dart';
 import 'package:front_gaming/schermate/MyLibrary.dart';
 import 'package:front_gaming/services/image_services.dart';
 import 'package:http/http.dart' as http;
@@ -7,8 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class GameDetailScreen extends StatefulWidget {
   final Game game;
+  final bool readOnly;
 
-  const GameDetailScreen({required this.game, super.key});
+  const GameDetailScreen({required this.game, super.key, this.readOnly = false});
 
   @override
   _GameDetailScreenState createState() => _GameDetailScreenState();
@@ -308,7 +310,7 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 4),
-                          ElevatedButton(
+                          if (!widget.readOnly)ElevatedButton(
                             onPressed: () => toggleAchievement(index),
                             child: Text(
                               achieved
@@ -335,12 +337,14 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _removeGameFromLibrary,
-        label: const Text("Rimuovi dalla libreria"),
-        icon: const Icon(Icons.delete),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
+       floatingActionButton: widget.readOnly
+      ? null
+      : FloatingActionButton.extended(
+          onPressed: _removeGameFromLibrary,
+          label: const Text("Rimuovi dalla libreria"),
+          icon: const Icon(Icons.delete),
+          backgroundColor: Colors.redAccent,
+        ),
+);
   }
 }

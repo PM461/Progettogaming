@@ -268,6 +268,102 @@ async def get_user_games(
         })
     return out
 
+# --- PLAYTIME & STATUS PER GIOCO ---
+
+from typing import Optional
+from pydantic import BaseModel
+from fastapi import Depends, HTTPException
+from bson import ObjectId
+
+# usa la stessa collection già usata sopra
+# user_games = db["user_games"]  # se non l'hai già definita
+
+class PlaytimePatch(BaseModel):
+    minutes: Optional[int] = None     # se non passi minutes, puoi passare hours
+    hours: Optional[float] = None
+    mode: str = "set"                 # "set" o "inc" (inc può essere anche negativo)
+
+class StatusPatch(BaseModel):
+    status: str                       # playing | completed | dropped | backlog | onhold | waiting
+
+_VALID_STATUS = {"playing","completed","dropped","backlog","onhold","waiting"}
+
+def _ensure_oid(s: str) -> ObjectId:
+    try:
+        return ObjectId(s)
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid user_id")
+
+@router.get("/{user_id}/game/{app_id}/playtime")
+async def get_playtime(user_id: str, app_id: str, current=Depends(get_current_user)):
+    # privacy check se ti serve: qui puoi riusare _can_view_profile
+    uid = _ensure_oid(user_id)
+    doc = await user_games.find_one({"user_id": uid, "app_id": app_id}, {"playtime": 1})
+    minutes = int(doc.get("playtime", 0)) if doc else 0  # di default 0
+    return {"minutes": minutes, "hours": round(minutes/60, 2)}
+
+@router.patch("/me/game/{app_id}/playtime")
+async def patch_playtime(app_id: str, patch: PlaytimePatch, current=Depends(get_current_user)):
+    me = _ensure_oid(current["id"])
+
+    # calcola minuti
+    if patch.minutes is not None:
+        delta_or_value = int(patch.minutes)
+    elif patch.hours is not None:
+        delta_or_value = int(round(patch.hours * 60))
+    else:
+        raise HTTPException(status_code=400, detail="minutes or hours required")
+
+    if patch.mode not in ("set", "inc"):
+        raise HTTPException(status_code=400, detail="mode must be 'set' or 'inc'")
+
+    if patch.mode == "set":
+        # imposta direttamente (non negativo)
+        new_minutes = max(0, delta_or_value)
+        await user_games.update_one(
+            {"user_id": me, "app_id": app_id},
+            {"$set": {"playtime": new_minutes}},
+            upsert=True,
+        )
+        minutes = new_minutes
+    else:
+        # inc: può essere anche negativo
+        await user_games.update_one(
+            {"user_id": me, "app_id": app_id},
+            {"$inc": {"playtime": delta_or_value}},
+            upsert=True,
+        )
+        # leggi il valore attuale per rispondere
+        doc = await user_games.find_one({"user_id": me, "app_id": app_id}, {"playtime": 1})
+        minutes = max(0, int(doc.get("playtime", 0))) if doc else 0
+        # se sotto zero, raddrizza a 0
+        if minutes < 0:
+            await user_games.update_one(
+                {"user_id": me, "app_id": app_id},
+                {"$set": {"playtime": 0}},
+            )
+            minutes = 0
+
+    return {"minutes": minutes, "hours": round(minutes/60, 2)}
+
+@router.get("/{user_id}/game/{app_id}/status")
+async def get_status(user_id: str, app_id: str, current=Depends(get_current_user)):
+    uid = _ensure_oid(user_id)
+    doc = await user_games.find_one({"user_id": uid, "app_id": app_id}, {"status": 1})
+    status = doc.get("status") if doc else "playing"
+    return {"status": status}
+
+@router.patch("/me/game/{app_id}/status")
+async def patch_status(app_id: str, patch: StatusPatch, current=Depends(get_current_user)):
+    me = _ensure_oid(current["id"])
+    if patch.status not in _VALID_STATUS:
+        raise HTTPException(status_code=400, detail=f"invalid status, must be one of {_VALID_STATUS}")
+    await user_games.update_one(
+        {"user_id": me, "app_id": app_id},
+        {"$set": {"status": patch.status}},
+        upsert=True,
+    )
+    return {"status": patch.status}
 
 
 

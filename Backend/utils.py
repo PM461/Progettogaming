@@ -39,36 +39,13 @@ def create_dev_token(user_id: str) -> str:
 
 # ===== Auth principale (senza JWT) =====
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    x_user_id: Optional[str] = Header(default=None),  # fallback opzionale dev
+    x_user_id: Optional[str] = Header(default=None, alias="X-USER-ID")
 ):
     """
-    Accetta:
-      - Authorization: Bearer <ObjectIdUtente>
-      - (opzionale, DEV) X-USER-ID: <ObjectIdUtente>
-
-    Restituisce dict con {"id": "<_id utente>"} se tutto ok.
+    Se è presente l'header X-USER-ID, ritorna un dict con l'id utente.
+    Altrimenti 401. Questo sostituisce la vecchia logica JWT per l'ambiente attuale.
     """
-
-    # Nessuna credenziale -> 401
-    if credentials is None or credentials.scheme.lower() != "bearer":
+    if not x_user_id:
         raise HTTPException(status_code=401, detail="not authenticated")
-
-    token = (credentials.credentials or "").strip()
-
-    # Caso principale DEV: token è un ObjectId valido
-    if ALLOW_OBJECTID_TOKEN and re.fullmatch(r"[0-9a-fA-F]{24}", token):
-        user = await users_collection.find_one({"_id": ObjectId(token)}, {"_id": 1})
-        if user:
-            return {"id": str(user["_id"])}
-        # token formalmente valido ma utente non esistente
-        raise HTTPException(status_code=401, detail="user not found")
-
-    # Fallback opzionale: header X-USER-ID (utile se stai testando da browser senza header Bearer)
-    if ALLOW_OBJECTID_TOKEN and x_user_id and re.fullmatch(r"[0-9a-fA-F]{24}", x_user_id):
-        user = await users_collection.find_one({"_id": ObjectId(x_user_id)}, {"_id": 1})
-        if user:
-            return {"id": str(user["_id"])}
-
-    # Altrimenti rifiuta
-    raise HTTPException(status_code=401, detail="invalid token")
+    # opzionale: validazioni base qui (es. formato ObjectId), altrimenti lascia così
+    return {"id": x_user_id}

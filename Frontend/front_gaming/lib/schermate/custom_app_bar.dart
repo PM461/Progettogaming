@@ -325,7 +325,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 Container(height: 30, width: 1, color: Colors.white24),
                 SizedBox(width: isTablet ? 10 : 0),
 
-                // 🔔 campanella (cliccabile ovunque grazie al default)
+                // campanella (cliccabile ovunque)
                 _buildBell(isTablet),
 
                 SizedBox(width: isTablet ? 25 : 0),

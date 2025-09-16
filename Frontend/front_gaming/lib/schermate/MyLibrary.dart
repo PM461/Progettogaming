@@ -16,7 +16,7 @@ class MyLibraryScreen extends StatefulWidget {
 }
 
 enum LibrarySection { games, consoles, stats }
-enum SubSection { owned, wishlist, lists } // <-- aggiunta "lists"
+enum SubSection { owned, wishlist, lists }
 
 class _MyLibraryScreenState extends State<MyLibraryScreen> {
   late Future<Map<String, List<Game>>> futureListsWithGames;
@@ -46,7 +46,8 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     setState(() => _profileImageName = imageName);
   }
 
-  Future<Map<String, List<Game>>> fetchListsAndGames() async {
+  // 👉 aggiunto {int? cb} per cache-busting
+  Future<Map<String, List<Game>>> fetchListsAndGames({int? cb}) async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString('user_id');
     if (userId == null || userId.isEmpty) {
@@ -54,20 +55,25 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     }
     const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
+    final cacheBust = cb ?? DateTime.now().millisecondsSinceEpoch;
+    final headers = {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+    };
+
     // Giochi
-    final gamesUrl = Uri.parse('$apiBaseUrl/user/$userId/games');
-    final gamesResponse = await http.get(gamesUrl);
+    final gamesUrl = Uri.parse('$apiBaseUrl/user/$userId/games?cb=$cacheBust');
+    final gamesResponse = await http.get(gamesUrl, headers: headers);
     if (gamesResponse.statusCode != 200) {
       throw Exception("Errore nel recupero dei giochi");
     }
     final gamesData = jsonDecode(gamesResponse.body);
-    final List<Game> allGames = (gamesData['games'] as List)
-        .map((json) => Game.fromJson(json))
-        .toList();
+    final List<Game> allGames =
+        (gamesData['games'] as List).map((json) => Game.fromJson(json)).toList();
 
     // Liste
-    final listsUrl = Uri.parse('$apiBaseUrl/user/$userId/lists');
-    final listsResponse = await http.get(listsUrl);
+    final listsUrl = Uri.parse('$apiBaseUrl/user/$userId/lists?cb=$cacheBust');
+    final listsResponse = await http.get(listsUrl, headers: headers);
     if (listsResponse.statusCode != 200) {
       throw Exception("Errore nel recupero delle liste");
     }
@@ -89,13 +95,18 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     _allGamesCache = allGames;
     _wishlistCache = listsWithGames['Wishlist'] ?? const [];
 
-    // metto anche "Tutti i giochi"
-    listsWithGames = {
+    return {
       "Tutti i giochi": allGames,
       ...listsWithGames,
     };
+  }
 
-    return listsWithGames;
+  // 👉 comodo helper per ricaricare davvero la lista
+  void _refreshLibrary() {
+    setState(() {
+      futureListsWithGames =
+          fetchListsAndGames(cb: DateTime.now().millisecondsSinceEpoch);
+    });
   }
 
   @override
@@ -144,7 +155,11 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
                       FadeTransition(opacity: anim, child: child),
                   layoutBuilder: (currentChild, _) =>
                       currentChild ?? const SizedBox(),
-                  child: content,
+                  // 👉 aggiunto RefreshIndicator per pull-to-refresh
+                  child: RefreshIndicator(
+                    onRefresh: () async => _refreshLibrary(),
+                    child: content,
+                  ),
                 ),
               ),
             ],
@@ -179,7 +194,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
     final allGames = listsWithGames['Tutti i giochi'] ?? const <Game>[];
     final wishlist = listsWithGames['Wishlist'] ?? const <Game>[];
 
-    // Owned = tutti i giochi che NON sono in wishlist (se usi una logica diversa, adatta qui)
+    // Owned = tutti i giochi che NON sono in wishlist
     final wlIds = wishlist.map((g) => g.gameId).toSet();
     final owned = allGames.where((g) => !wlIds.contains(g.gameId)).toList();
 
@@ -206,7 +221,6 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
       current = selectedName.isNotEmpty
           ? (customListsMap[selectedName] ?? const <Game>[])
           : const <Game>[];
-      // NOTA: aggiorno _selectedUserListName solo su interazione utente, non in build.
     }
 
     return Padding(
@@ -214,12 +228,11 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Primo sottomenu
           _UnderlineNav(
             items: const [
               _NavItem(label: 'Posseduti'),
               _NavItem(label: 'Wishlist'),
-              _NavItem(label: 'Liste'), // <-- nuova voce
+              _NavItem(label: 'Liste'),
             ],
             selectedIndex: _gamesSub.index,
             onTap: (i) => setState(() => _gamesSub = SubSection.values[i]),
@@ -229,7 +242,6 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
             highlightSelected: true,
           ),
 
-          // Se sono in "Liste", mostro il secondo nav con i nomi delle liste utente
           if (_gamesSub == SubSection.lists) ...[
             const SizedBox(height: 6),
             if (listNames.isEmpty)
@@ -242,9 +254,7 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
               )
             else
               _UnderlineNav(
-                items: [
-                  for (final name in listNames) _NavItem(label: name),
-                ],
+                items: [for (final name in listNames) _NavItem(label: name)],
                 selectedIndex: listNames.indexOf(
                   listNames.contains(_selectedUserListName)
                       ? _selectedUserListName!
@@ -256,13 +266,12 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
                 alignLeft: true,
                 compact: true,
                 showUnderline: false,
-                highlightSelected: true, // evidenza chiara
+                highlightSelected: true,
               ),
           ],
 
           const SizedBox(height: 8),
 
-          // Griglia giochi
           Expanded(
             child: current.isEmpty
                 ? Center(
@@ -295,20 +304,23 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
                           crossAxisCount: cross,
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
-                          childAspectRatio: 3 / 4, // 2/3 immagine + 1/3 info
+                          childAspectRatio: 3 / 4,
                         ),
                         itemCount: current.length,
                         itemBuilder: (_, i) {
                           final game = current[i];
                           return _GameHoverCard(
                             game: game,
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              // 👉 al ritorno ricarico SEMPRE
+                              await Navigator.push<bool>(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => GameDetailScreen(game: game),
                                 ),
                               );
+                              if (!mounted) return;
+                              _refreshLibrary();
                             },
                             enableHoverEffects: isDesktopLike,
                           );
@@ -341,8 +353,8 @@ class _MyLibraryScreenState extends State<MyLibraryScreen> {
               _NavItem(label: 'Wishlist'),
             ],
             selectedIndex: _consoleSub == SubSection.owned ? 0 : 1,
-            onTap: (i) =>
-                setState(() => _consoleSub = i == 0 ? SubSection.owned : SubSection.wishlist),
+            onTap: (i) => setState(
+                () => _consoleSub = i == 0 ? SubSection.owned : SubSection.wishlist),
             alignLeft: true,
             compact: true,
             showUnderline: false,
@@ -699,7 +711,8 @@ class _GameHoverCardState extends State<_GameHoverCard> {
               Expanded(
                 flex: 1,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   width: double.infinity,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

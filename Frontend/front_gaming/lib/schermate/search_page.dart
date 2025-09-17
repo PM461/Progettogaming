@@ -2,13 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:front_gaming/schermate/custom_app_bar.dart';
 import 'package:http/http.dart' as http;
-import 'package:front_gaming/schermate/gamedetail.dart'; // o dove hai la pagina dettaglio gioco
+import 'package:front_gaming/schermate/gamedetail.dart';
 import 'package:front_gaming/services/image_services.dart';
 import 'package:front_gaming/services/profile_service.dart';
 
 class SearchPage extends StatefulWidget {
   final String? query;
-
   const SearchPage({super.key, this.query});
 
   @override
@@ -16,9 +15,14 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
+  // --- brand colors (coerenti con il resto) ---
+  static const primary = Color(0xFF0E91DD);
+  static const accent = Color(0xFFEE3FD0);
+
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _annoController = TextEditingController();
   final TextEditingController _sviluppatoreController = TextEditingController();
+
   static const String _genereTutti = 'Tutti';
 
   List<dynamic> _searchResults = [];
@@ -26,40 +30,11 @@ class _SearchPageState extends State<SearchPage> {
   bool _isSearching = false;
   String _searchError = '';
   String? _profileImageName;
-  Set<String> availableGeneri = {};
+
+  Set<String> availableGeneri = {_genereTutti};
   Set<String> availableAnni = {};
   Set<String> availableSviluppatori = {};
   String? _selectedGenere = _genereTutti;
-
-  // Lista generi esempio, puoi adattarla
-  final List<String> generi = [
-    'Tutti',
-    'Azione',
-    'Avventura',
-    'RPG',
-    'Strategia',
-    'Simulazione',
-    'Sport',
-    'Puzzle',
-    // aggiungi i generi che ti servono
-  ];
-  String cleanGenere(dynamic g) {
-    if (g == null) return '';
-    if (g is String) {
-      return g.trim().toLowerCase().replaceAll(RegExp(r'[^a-zàèéìòù\s]'), '');
-    }
-    if (g is List) {
-      // Unisci tutti i generi puliti in una stringa separata da virgola o spazio
-      return g
-          .map((e) => e
-              .toString()
-              .trim()
-              .toLowerCase()
-              .replaceAll(RegExp(r'[^a-zàèéìòù\s]'), ''))
-          .join(','); // o ' ' se preferisci
-    }
-    return '';
-  }
 
   @override
   void initState() {
@@ -79,45 +54,54 @@ class _SearchPageState extends State<SearchPage> {
       final response = await http.get(Uri.parse('$apiBaseUrl/genres'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Presumo la risposta ha la forma: { "genres": [ { "id": "...", "label": "..." }, ... ] }
-        final List<dynamic> genresList = data['genres'];
+        final List<dynamic> genresList = data['genres'] ?? [];
         setState(() {
-          availableGeneri = {
-            _genereTutti
-          }; // sempre aggiungi "Tutti" come prima voce
+          availableGeneri = {_genereTutti};
           for (var g in genresList) {
-            if (g['label'] != null && g['label'].toString().isNotEmpty) {
-              availableGeneri.add(g['label'].toString());
-            }
+            final lbl = (g['label'] ?? '').toString().trim();
+            if (lbl.isNotEmpty) availableGeneri.add(lbl);
           }
           _selectedGenere = _genereTutti;
         });
-      } else {
-        print('Errore caricamento generi: ${response.statusCode}');
       }
-    } catch (e) {
-      print('Eccezione caricamento generi: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadProfileImage() async {
     final imageName = await ProfileService.getProfileImageName();
-    setState(() {
-      _profileImageName = imageName;
-    });
+    if (!mounted) return;
+    setState(() => _profileImageName = imageName);
+  }
+
+  String cleanGenere(dynamic g) {
+    if (g == null) return '';
+    if (g is String) {
+      return g.trim().toLowerCase().replaceAll(RegExp(r'[^a-zàèéìòù\s]'), '');
+    }
+    if (g is List) {
+      return g
+          .map((e) => e
+              .toString()
+              .trim()
+              .toLowerCase()
+              .replaceAll(RegExp(r'[^a-zàèéìòù\s]'), ''))
+          .join(',');
+    }
+    return '';
   }
 
   Future<void> searchGame(String query) async {
-    if (query.length < 3) {
+    if (query.trim().length < 3) {
       setState(() {
         _searchResults = [];
+        _filteredResults = [];
         _searchError = '';
-        availableGeneri = {};
-        availableAnni = {};
-        availableSviluppatori = {};
-        _selectedGenere = null;
-        _annoController.text = '';
-        _sviluppatoreController.text = '';
+        availableGeneri = {_genereTutti};
+        availableAnni.clear();
+        availableSviluppatori.clear();
+        _selectedGenere = _genereTutti;
+        _annoController.clear();
+        _sviluppatoreController.clear();
       });
       return;
     }
@@ -136,99 +120,66 @@ class _SearchPageState extends State<SearchPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final results = data['results'] as List<dynamic>;
-        _filteredResults = results;
-
+        final results = (data['results'] as List<dynamic>? ?? []);
         final generiSet = <String>{};
-        final anniSet = <String>{};
-        final sviluppatoriSet = <String>{};
 
-        for (var game in results) {
-          dynamic rawGenere =
+        // Estrai metadati rapidi per i filtri
+        for (final game in results) {
+          final rawGenere =
               game['details']?['genere'] ?? game['details']?['genre'];
-
-          if (rawGenere != null) {
-            if (rawGenere is String) {
-              String gClean = cleanGenere(rawGenere);
-              if (gClean.isNotEmpty) generiSet.addAll(gClean.split(','));
-            } else if (rawGenere is List) {
-              for (var g in rawGenere) {
-                String gClean = cleanGenere(g);
-                if (gClean.isNotEmpty) generiSet.add(gClean);
-              }
+          if (rawGenere is String) {
+            final gClean = cleanGenere(rawGenere);
+            if (gClean.isNotEmpty) generiSet.addAll(gClean.split(','));
+          } else if (rawGenere is List) {
+            for (final g in rawGenere) {
+              final gClean = cleanGenere(g);
+              if (gClean.isNotEmpty) generiSet.add(gClean);
             }
           }
         }
 
         setState(() {
           _searchResults = results;
-          availableGeneri = {_genereTutti}; // usa la costante
-          availableGeneri.addAll(generiSet);
-          availableAnni = anniSet;
-          availableSviluppatori = sviluppatoriSet;
-
-          // Reset selezione genere se non più valida
-          if (_selectedGenere == null ||
-              !availableGeneri.contains(_selectedGenere!.toLowerCase())) {
+          availableGeneri = {_genereTutti, ...generiSet};
+          // reset filtri non coerenti
+          if (!availableGeneri.contains(_selectedGenere)) {
             _selectedGenere = _genereTutti;
           }
-
-          if (!availableAnni.contains(_annoController.text)) {
-            _annoController.text = '';
-          }
-
-          if (!availableSviluppatori.contains(_sviluppatoreController.text)) {
-            _sviluppatoreController.text = '';
-          }
-
-          _applyFilters(); // Applica filtri ai nuovi risultati
+          _applyFilters();
         });
       } else {
         setState(() {
           _searchResults = [];
+          _filteredResults = [];
           _searchError = 'Nessun gioco trovato';
-          availableGeneri = {};
-          availableAnni = {};
-          availableSviluppatori = {};
+          availableGeneri = {_genereTutti};
         });
       }
     } catch (e) {
-      print('Eccezione durante la ricerca: $e');
       setState(() {
-        _searchError = 'Errore durante la ricerca: $e';
+        _searchError = 'Errore durante la ricerca';
         _searchResults = [];
-        availableGeneri = {};
-        availableAnni = {};
-        availableSviluppatori = {};
+        _filteredResults = [];
       });
     } finally {
-      setState(() {
-        _isSearching = false;
-      });
+      if (mounted) setState(() => _isSearching = false);
     }
   }
 
   void _applyFilters() {
-    List<dynamic> filtered = _searchResults;
+    List<dynamic> filtered = List.from(_searchResults);
 
     // Genere
-    if (_selectedGenere != null &&
-        _selectedGenere!.isNotEmpty &&
-        _selectedGenere!.toLowerCase() != _genereTutti.toLowerCase()) {
+    final sel = (_selectedGenere ?? _genereTutti).toLowerCase();
+    if (sel.isNotEmpty && sel != _genereTutti.toLowerCase()) {
       filtered = filtered.where((game) {
-        dynamic rawGenere =
+        final rawGenere =
             game['details']?['genere'] ?? game['details']?['genre'] ?? '';
-
         if (rawGenere is String) {
-          String genere = cleanGenere(rawGenere);
-          return genere.split(',').contains(
-              _selectedGenere); // perché cleanGenere per lista usa virgola
+          final gs = cleanGenere(rawGenere).split(',');
+          return gs.contains(sel);
         } else if (rawGenere is List) {
-          // pulisci ogni elemento e verifica se uno coincide
-          return rawGenere.any((e) {
-            String gClean = cleanGenere(e);
-            return gClean == _selectedGenere;
-          });
+          return rawGenere.any((e) => cleanGenere(e) == sel);
         }
         return false;
       }).toList();
@@ -238,45 +189,55 @@ class _SearchPageState extends State<SearchPage> {
     final annoFiltro = _annoController.text.trim();
     if (annoFiltro.isNotEmpty) {
       filtered = filtered.where((game) {
-        final dataPub = game['details']['data di pubblicazione'] ??
-            game['details']['publication date'] ??
+        final dp = game['details']?['data di pubblicazione'] ??
+            game['details']?['publication date'] ??
             '';
-        final dataPubStr = dataPub.toString();
-        final anno = dataPubStr.length >= 4 ? dataPubStr.substring(0, 4) : '';
-        return anno == annoFiltro;
+        final s = dp.toString();
+        String year = '';
+        if (s.startsWith('['))
+          year = s.substring(1, 5);
+        else
+          year = s.substring(0, 4);
+
+        return year == annoFiltro;
       }).toList();
     }
 
     // Sviluppatore
-    final sviluppatoreFiltro =
-        _sviluppatoreController.text.trim().toLowerCase();
-
-    if (sviluppatoreFiltro.isNotEmpty) {
+    final devFiltro = _sviluppatoreController.text.trim().toLowerCase();
+    if (devFiltro.isNotEmpty) {
       filtered = filtered.where((game) {
-        final rawDev = game['sviluppatore'] ??
+        final raw = game['sviluppatore'] ??
             game['details']?['sviluppatore'] ??
             game['details']?['developer'];
-
-        if (rawDev == null) return false;
-
-        if (rawDev is String) {
-          return rawDev.toLowerCase().contains(sviluppatoreFiltro);
-        } else if (rawDev is List) {
-          return rawDev.any((dev) =>
-              dev.toString().toLowerCase().contains(sviluppatoreFiltro));
-        }
+        if (raw == null) return false;
+        if (raw is String) return raw.toLowerCase().contains(devFiltro);
+        if (raw is List)
+          return raw.any((d) => d.toString().toLowerCase().contains(devFiltro));
         return false;
       }).toList();
     }
 
-    setState(() {
-      _filteredResults = filtered;
-    });
+    setState(() => _filteredResults = filtered);
   }
 
-  // Quando cambia un filtro aggiorni i risultati
-  void _onFilterChanged() {
-    _applyFilters();
+  void _onFilterChanged() => _applyFilters();
+
+  String _titleOf(dynamic item) => (item['label'] ?? '').toString();
+
+  String _yearOf(dynamic item) {
+    final dp = item['details']?['data di pubblicazione'] ??
+        item['details']?['publication date'] ??
+        '';
+    String s = dp.toString();
+    if (s.startsWith('[')) return (s.length >= 4) ? s.substring(1, 5) : '';
+    return (s.length >= 4) ? s.substring(0, 4) : '';
+  }
+
+  String? _logoOf(dynamic item) {
+    return item['details']?['logo image'] as String? ??
+        item['details']?['logo'] as String? ??
+        item['details']?['image']?['logo'] as String?;
   }
 
   @override
@@ -287,207 +248,436 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
+  // ----------------------------- UI -----------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
+      appBar: CustomAppBar(selectedImageName: _profileImageName),
+      body: Stack(
         children: [
-          CustomAppBar(selectedImageName: _profileImageName),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              controller: _searchController,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Cerca un gioco...',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.search),
+          // BG gradient + glow
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF141414), Color(0xFF0B0B0B)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
-              onChanged: (value) {
-                searchGame(value);
-              },
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      primary.withOpacity(.22),
+                      Colors.transparent,
+                      accent.withOpacity(.22)
+                    ],
+                    stops: const [0, .5, 1],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
             ),
           ),
 
-          // FILTRI
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-            child: Row(
-              children: [
-                // Genere Dropdown
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedGenere,
-                    decoration: const InputDecoration(
-                      labelText: 'Filtra per genere',
-                      border: OutlineInputBorder(),
+          Column(
+            children: [
+              // --- Barra di ricerca ---
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: _SearchBar(
+                  controller: _searchController,
+                  hint: 'Cerca un gioco…',
+                  onChanged: (v) => searchGame(v),
+                  onClear: () {
+                    _searchController.clear();
+                    searchGame('');
+                  },
+                ),
+              ),
+
+              // --- Filtri (responsive con Wrap) ---
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    // GENERE
+                    ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(minWidth: 180, maxWidth: 260),
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedGenere,
+                        decoration: _inputDeco('Genere'),
+                        items: availableGeneri.map((g) {
+                          final display = g.isNotEmpty
+                              ? g[0].toUpperCase() + g.substring(1)
+                              : g;
+                          return DropdownMenuItem(
+                              value: g, child: Text(display));
+                        }).toList(),
+                        onChanged: (v) {
+                          setState(() => _selectedGenere = v ?? _genereTutti);
+                          _applyFilters();
+                        },
+                        isDense: true,
+                      ),
                     ),
-                    items: availableGeneri
-                        .map<DropdownMenuItem<String>>((String genere) {
-                      // Primo carattere maiuscolo, resto minuscolo
-                      final display = genere.isNotEmpty
-                          ? genere[0].toUpperCase() + genere.substring(1)
-                          : genere;
-                      return DropdownMenuItem<String>(
-                        value: genere,
-                        child: Text(display),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedGenere = newValue;
+
+                    // ANNO
+                    SizedBox(
+                      width: 110,
+                      child: TextField(
+                        controller: _annoController,
+                        decoration:
+                            _inputDeco('Anno').copyWith(counterText: ''),
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        onChanged: (_) => _onFilterChanged(),
+                      ),
+                    ),
+
+                    // SVILUPPATORE
+                    ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(minWidth: 180, maxWidth: 340),
+                      child: TextField(
+                        controller: _sviluppatoreController,
+                        decoration: _inputDeco('Sviluppatore'),
+                        onChanged: (_) => _onFilterChanged(),
+                      ),
+                    ),
+
+                    // RESET
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _selectedGenere = _genereTutti;
+                          _annoController.clear();
+                          _sviluppatoreController.clear();
+                        });
                         _applyFilters();
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Anno TextField
-                SizedBox(
-                  width: 80,
-                  child: TextField(
-                    controller: _annoController,
-                    decoration: InputDecoration(
-                      labelText: 'Anno',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12),
+                      },
+                      icon: const Icon(Icons.filter_alt_off, size: 18),
+                      label: const Text('Reset filtri'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 10),
+                        shape: const StadiumBorder(),
+                      ),
                     ),
-                    keyboardType: TextInputType.number,
-                    maxLength: 4,
-                    onChanged: (value) {
-                      _onFilterChanged();
-                    },
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
+              ),
 
-                // Sviluppatore TextField
-                Expanded(
-                  child: TextField(
-                    controller: _sviluppatoreController,
-                    decoration: InputDecoration(
-                      labelText: 'Sviluppatore',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    onChanged: (value) {
-                      _onFilterChanged();
-                    },
-                  ),
+              if (_isSearching)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: LinearProgressIndicator(),
                 ),
-              ],
-            ),
-          ),
 
-          if (_isSearching) const LinearProgressIndicator(),
-          if (_searchError.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child:
-                  Text(_searchError, style: const TextStyle(color: Colors.red)),
-            ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  int crossAxisCount;
+              if (_searchError.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(_searchError,
+                      style: const TextStyle(color: Colors.red)),
+                ),
 
-                  if (width < 400) {
-                    crossAxisCount = 2;
-                  } else if (width < 800) {
-                    crossAxisCount = 4;
-                  } else {
-                    crossAxisCount = 6;
-                  }
+              // --- Risultati ---
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                  child: LayoutBuilder(
+                    builder: (context, c) {
+                      final w = c.maxWidth;
+                      int cross;
+                      if (w < 420)
+                        cross = 2;
+                      else if (w < 800)
+                        cross = 4;
+                      else if (w < 1200)
+                        cross = 6;
+                      else
+                        cross = 8;
 
-                  return GridView.builder(
-                    itemCount: _filteredResults.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1 / 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      final item = _filteredResults[index];
-                      final logoUrl =
-                          item['details']?['logo image'] as String? ??
-                              item['details']?['logo'] as String? ??
-                              item['details']?['image']?['logo'] as String?;
+                      if (_filteredResults.isEmpty &&
+                          !_isSearching &&
+                          _searchController.text.trim().isEmpty) {
+                        return const _EmptySearchState();
+                      }
 
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Gamedatascreen(game: item),
-                            ),
+                      if (_filteredResults.isEmpty && !_isSearching) {
+                        return const _EmptyList(
+                            label: 'Nessun risultato con questi filtri');
+                      }
+
+                      return GridView.builder(
+                        itemCount: _filteredResults.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: cross,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.78,
+                        ),
+                        itemBuilder: (_, i) {
+                          final item = _filteredResults[i];
+                          final logo = _logoOf(item);
+                          final title = _titleOf(item);
+                          final year = _yearOf(item);
+
+                          return _GameResultCard(
+                            title: title,
+                            year: year,
+                            logoUrl: logo,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => Gamedatascreen(game: item),
+                                ),
+                              );
+                            },
                           );
                         },
-                        child: Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Column(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: logoUrl != null
-                                      ? (logoUrl.toLowerCase().endsWith('.svg')
-                                          ? ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              child: NetworkSvgWidget(
-                                                  url: logoUrl),
-                                            )
-                                          : ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              child: Image.network(
-                                                logoUrl,
-                                                fit: BoxFit.contain,
-                                                width: double.infinity,
-                                              ),
-                                            ))
-                                      : const Icon(Icons.videogame_asset,
-                                          size: 40),
-                                ),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: Text(
-                                  item['label']?.toString() ?? 'Senza nome',
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                          ),
-                        ),
                       );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDeco(String label) {
+    return InputDecoration(
+      labelText: label,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+}
+
+// ----------------------- WIDGETS DECORATIVI -----------------------
+
+class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onClear;
+
+  const _SearchBar({
+    required this.controller,
+    required this.hint,
+    this.onChanged,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pri = Theme.of(context).colorScheme.primary;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: pri.withOpacity(.25)),
+        color: const Color(0xFF1C1C1C),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(
+        children: [
+          const SizedBox(width: 6),
+          const Icon(Icons.search),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: InputBorder.none,
+              ),
+              onChanged: onChanged,
+            ),
+          ),
+          if (controller.text.isNotEmpty)
+            IconButton(
+              tooltip: 'Pulisci',
+              onPressed: onClear,
+              icon: const Icon(Icons.close),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GameResultCard extends StatefulWidget {
+  final String title;
+  final String year;
+  final String? logoUrl;
+  final VoidCallback? onTap;
+
+  const _GameResultCard({
+    required this.title,
+    required this.year,
+    required this.logoUrl,
+    this.onTap,
+  });
+
+  @override
+  State<_GameResultCard> createState() => _GameResultCardState();
+}
+
+class _GameResultCardState extends State<_GameResultCard>
+    with SingleTickerProviderStateMixin {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = AnimatedScale(
+      duration: const Duration(milliseconds: 120),
+      scale: _hover ? 1.03 : 1.0,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Card(
+          elevation: _hover ? 10 : 4,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              // immagine
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (widget.logoUrl != null)
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: widget.logoUrl!.toLowerCase().endsWith('.svg')
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: NetworkSvgWidget(url: widget.logoUrl!),
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.network(
+                                  widget.logoUrl!,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                      )
+                    else
+                      Container(
+                        color: Colors.grey.shade900,
+                        child: const Icon(Icons.videogame_asset,
+                            size: 52, color: Colors.white30),
+                      ),
+                    // badge anno
+                    if (widget.year.isNotEmpty)
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Color.fromARGB(136, 27, 22, 22),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(widget.year,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // titolo
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+                child: Text(
+                  widget.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: card,
+    );
+  }
+}
+
+class _EmptyList extends StatelessWidget {
+  final String label;
+  const _EmptyList({required this.label});
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(label,
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Colors.white70)),
+    );
+  }
+}
+
+class _EmptySearchState extends StatelessWidget {
+  const _EmptySearchState({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Opacity(
+        opacity: .9,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.search, size: 48),
+            const SizedBox(height: 10),
+            Text(
+              'Cerca tra migliaia di giochi',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Scrivi almeno 3 caratteri per iniziare',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.white70),
+            ),
+          ],
+        ),
       ),
     );
   }

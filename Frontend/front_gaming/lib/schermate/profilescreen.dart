@@ -954,6 +954,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ---------- Build ----------
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final primary = cs.primary;
+    final accent = cs.secondary;
     final imagePath = _selectedImageName != null
         ? 'images/propic/${_selectedImageName!}.png'
         : 'images/propic/1.png';
@@ -961,132 +964,753 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: CustomAppBar(
         selectedImageName: _selectedImageName,
-        onBellTap: _openNotificationsSheet, // opzionale: cosa succede al tap
+        onBellTap: _openNotificationsSheet,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: _showImagePickerPopup,
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundImage: AssetImage(imagePath),
+      body: Stack(
+        children: [
+          // Glow/gradient di sfondo
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF141414), Color(0xFF0B0B0B)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                _nickname ?? 'Nickname',
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              _buildInfoRow('Email', _email ?? 'Caricamento...'),
-              _buildInfoRow(
-                  'Data creazione', _creationDate ?? 'Caricamento...'),
-              const SizedBox(height: 12),
-              SwitchListTile(
-                title: const Text('Profilo privato'),
-                value: _isPrivate ?? false,
-                onChanged: (v) => _setPrivacy(v),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: (_steamId == null || _steamId!.isEmpty)
-                        ? () async {
-                            final account = userId ?? '';
-                            if (account.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('User ID non disponibile')),
-                              );
-                              return;
-                            }
-                            final String apiBaseUrl = _apiBase;
-                            final url =
-                                '$apiBaseUrl/auth/steam/login?account=$account';
-                            final uri = Uri.parse(url);
-
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(
-                                uri,
-                                mode: LaunchMode.platformDefault,
-                                webOnlyWindowName: '_blank',
-                              );
-                            }
-                          }
-                        : null,
-                    child: Image.asset(
-                      _steamId != null && _steamId!.isNotEmpty
-                          ? 'images/steam.png'
-                          : 'images/steam_gray.png',
-                      width: 40,
-                      height: 40,
-                    ),
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      primary.withOpacity(0.22),
+                      Colors.transparent,
+                      accent.withOpacity(0.22),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: const [0, .5, 1],
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Informazioni su Steam'),
-                      content: const Text(
-                        '⚠️ Attenzione: gli obiettivi nella libreria verranno sovrascritti.\n\n'
-                        'Se non dovesse funzionare, ricordati di rendere il tuo profilo Steam pubblico.',
+            ),
+          ),
+
+          // Contenuto
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ---------- HEADER / HERO ----------
+                    _SectionCard(
+                      padding: const EdgeInsets.all(18),
+                      child: LayoutBuilder(
+                        builder: (ctx, cons) {
+                          final isNarrow = cons.maxWidth < 640;
+                          return Flex(
+                            direction:
+                                isNarrow ? Axis.vertical : Axis.horizontal,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Avatar + edit overlay
+                              Stack(
+                                children: [
+                                  GestureDetector(
+                                    onTap: _showImagePickerPopup,
+                                    child: CircleAvatar(
+                                      radius: 54,
+                                      backgroundImage: AssetImage(imagePath),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: cs.primary,
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(.4),
+                                            blurRadius: 6,
+                                          )
+                                        ],
+                                      ),
+                                      child: IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        icon: const Icon(Icons.edit, size: 18),
+                                        color: Colors.white,
+                                        onPressed: _showImagePickerPopup,
+                                        tooltip: 'Cambia immagine profilo',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 18, height: 18),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: isNarrow
+                                      ? CrossAxisAlignment.center
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _nickname ?? 'Nickname',
+                                      textAlign: isNarrow
+                                          ? TextAlign.center
+                                          : TextAlign.left,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w900),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      alignment: isNarrow
+                                          ? WrapAlignment.center
+                                          : WrapAlignment.start,
+                                      children: [
+                                        _Badge.icon(
+                                          icon: Icons.mail_outline,
+                                          label: _email ?? 'Email',
+                                        ),
+                                        _Badge.icon(
+                                          icon: Icons.calendar_month_outlined,
+                                          label: _creationDate ?? '—',
+                                        ),
+                                        if (_steamId != null &&
+                                            _steamId!.isNotEmpty)
+                                          _Badge.icon(
+                                            icon: Icons.link,
+                                            label: 'Steam collegato',
+                                            color: Colors.green.shade600,
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12, height: 12),
+
+                              // Azioni rapide
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                alignment: isNarrow
+                                    ? WrapAlignment.center
+                                    : WrapAlignment.end,
+                                children: [
+                                  // Notifiche
+                                  Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: _openNotificationsSheet,
+                                        icon: const Icon(
+                                            Icons.notifications_none),
+                                        label: const Text('Notifiche'),
+                                      ),
+                                      if (_notifCount > 0)
+                                        Positioned(
+                                          right: -6,
+                                          top: -6,
+                                          child: _Badge.counter(_notifCount),
+                                        ),
+                                    ],
+                                  ),
+                                  // Steam connect/connected
+                                  _GradientButton(
+                                    label:
+                                        (_steamId == null || _steamId!.isEmpty)
+                                            ? 'Collega Steam'
+                                            : 'Steam collegato',
+                                    icon: Icons.videogame_asset,
+                                    onTap: (_steamId == null ||
+                                            _steamId!.isEmpty)
+                                        ? () async {
+                                            final account = userId ?? '';
+                                            if (account.isEmpty) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'User ID non disponibile')),
+                                              );
+                                              return;
+                                            }
+                                            final String apiBaseUrl = _apiBase;
+                                            final url =
+                                                '$apiBaseUrl/auth/steam/login?account=$account';
+                                            final uri = Uri.parse(url);
+                                            if (await canLaunchUrl(uri)) {
+                                              await launchUrl(
+                                                uri,
+                                                mode:
+                                                    LaunchMode.platformDefault,
+                                                webOnlyWindowName: '_blank',
+                                              );
+                                            }
+                                          }
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Chiudi'),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ---------- PRIVACY ----------
+                    _SectionCard(
+                      child: Row(
+                        children: [
+                          Icon(
+                            (_isPrivate ?? false)
+                                ? Icons.lock_outline
+                                : Icons.public_outlined,
+                            color: cs.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Privacy profilo',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w800)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Se attivo, solo i tuoi amici possono vedere la tua libreria.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _isPrivate ?? false,
+                            onChanged: _setPrivacy,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ---------- SEZIONE AMICI ----------
+                    _ListSectionHeader(
+                      icon: Icons.group_outlined,
+                      title: 'Amici',
+                      trailing: (_friendRequestsCount > 0)
+                          ? _Badge.counter(_friendRequestsCount)
+                          : null,
+                    ),
+
+                    // Ricerca utenti
+                    _SectionCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('Cerca utenti',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _friendSearch,
+                                  onSubmitted: _searchUsers,
+                                  decoration: InputDecoration(
+                                    hintText: 'Cerca utente per nome…',
+                                    prefixIcon: const Icon(Icons.search),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () =>
+                                    _searchUsers(_friendSearch.text),
+                                child: const Text('Cerca'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (_searchResults.isEmpty)
+                            const _EmptyState(
+                              icon: Icons.person_search,
+                              title: 'Nessun risultato',
+                              subtitle:
+                                  'Prova a cercare amici per nickname o username.',
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _searchResults.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (_, i) {
+                                final u =
+                                    _searchResults[i] as Map<String, dynamic>;
+                                final uid = (u['id'] ?? '').toString();
+                                final name = (u['name'] ??
+                                        u['nickname'] ??
+                                        u['username'] ??
+                                        'Utente')
+                                    .toString();
+                                return ListTile(
+                                  leading: _avatarFromAny(u),
+                                  title: Text(name),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.person_add),
+                                    tooltip: 'Invia richiesta',
+                                    onPressed: () => _sendFriendRequest(uid),
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Richieste in arrivo
+                    _SectionCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('Richieste in arrivo',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          if (_incoming.isEmpty)
+                            const _EmptyState(
+                              icon: Icons.inbox_outlined,
+                              title: 'Nessuna richiesta',
+                              subtitle:
+                                  'Quando qualcuno ti invierà una richiesta d’amicizia, apparirà qui.',
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _incoming.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (_, i) {
+                                final r = _incoming[i] as Map<String, dynamic>;
+                                final requester = (r['requester'] ?? {})
+                                    as Map<String, dynamic>;
+                                final requesterId =
+                                    (requester['id'] ?? '').toString();
+                                final name = (requester['name'] ??
+                                        requester['nickname'] ??
+                                        requester['username'] ??
+                                        'Utente')
+                                    .toString();
+                                return ListTile(
+                                  leading: _avatarFromAny(r),
+                                  title: Text(name),
+                                  subtitle:
+                                      const Text('Ti ha inviato una richiesta'),
+                                  trailing: Wrap(
+                                    spacing: 4,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.check,
+                                            color: Colors.green),
+                                        tooltip: 'Accetta',
+                                        onPressed: () =>
+                                            _acceptFriend(requesterId),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.close,
+                                            color: Colors.redAccent),
+                                        tooltip: 'Rifiuta',
+                                        onPressed: () =>
+                                            _rejectFriend(requesterId),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // I miei amici
+                    _SectionCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('I miei amici',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          if (_friends.isEmpty)
+                            const _EmptyState(
+                              icon: Icons.sentiment_dissatisfied_outlined,
+                              title: 'Ancora nessun amico',
+                              subtitle:
+                                  'Invia richieste dalla ricerca utenti qui sopra.',
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _friends.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (_, i) {
+                                final f = _friends[i] as Map<String, dynamic>;
+                                final fid = _extractFriendId(f);
+                                final friendName = _extractFriendName(f);
+                                return ListTile(
+                                  leading: _avatarFromAny(f),
+                                  title: Text(friendName),
+                                  onTap: () async {
+                                    final isPriv = await _fetchIsPrivate(fid);
+                                    if (!mounted) return;
+                                    if (isPriv) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Profilo privato'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => FriendLibraryScreen(
+                                          friendId: fid,
+                                          friendName: friendName,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.person_remove),
+                                    tooltip: 'Rimuovi amico',
+                                    onPressed: () => _removeFriend(fid),
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Richieste inviate
+                    _SectionCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text('Richieste inviate',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          if (_outgoing.isEmpty)
+                            const _EmptyState(
+                              icon: Icons.outbox_outlined,
+                              title: 'Nessuna richiesta inviata',
+                              subtitle:
+                                  'Le richieste che invii saranno mostrate qui.',
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: _outgoing.length,
+                              separatorBuilder: (_, __) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (_, i) {
+                                final r =
+                                    _outgoing[i] as Map<String, dynamic>? ?? {};
+                                final recipient = (r['recipient'] ?? {})
+                                    as Map<String, dynamic>;
+                                final name = (recipient['username'] ??
+                                        recipient['nickname'] ??
+                                        recipient['name'] ??
+                                        'Utente')
+                                    .toString();
+                                return ListTile(
+                                  leading: _avatarFrom(recipient),
+                                  title: Text(name),
+                                  subtitle: const Text('In attesa di conferma'),
+                                );
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Azioni account
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {/* elimina profilo */},
+                            icon: const Icon(Icons.delete, size: 18),
+                            label: const Text('Elimina profilo'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _logout,
+                            icon: const Icon(Icons.logout),
+                            label: const Text('Logout'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 14),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  );
-                },
-                icon: const Icon(Icons.info_outline, size: 18),
-                label: const Text('Informazioni Steam'),
-              ),
-              const SizedBox(height: 24),
-
-              // ----------- SEZIONE AMICI + RICERCA -----------
-              _friendsSection(),
-
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () {/* elimina profilo */},
-                icon: const Icon(Icons.delete, size: 18),
-                label: const Text('Elimina profilo'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  textStyle: const TextStyle(fontSize: 14),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout),
-                label: const Text('Logout'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueGrey,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  textStyle: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// === AGGIUNGI QUESTI HELPER (in fondo al file) ===
+
+class _SectionCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  const _SectionCard({required this.child, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 8,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(16),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _GradientButton extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onTap;
+  const _GradientButton({required this.label, this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [cs.primary, cs.secondary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18, color: Colors.white),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final Widget child;
+  final Color? color;
+  const _Badge({required this.child, this.color});
+
+  factory _Badge.counter(int count) => _Badge(
+        child: Text(
+          '$count',
+          style: const TextStyle(
+              color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+        ),
+      );
+
+  factory _Badge.icon(
+      {required IconData icon, required String label, Color? color}) {
+    return _Badge(
+      color: color,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = color ?? Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(color: bg.withOpacity(.4), blurRadius: 10, spreadRadius: 0)
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  const _EmptyState({required this.icon, required this.title, this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        color: cs.surface.withOpacity(.35),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: cs.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                ]
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ListSectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget? trailing;
+  const _ListSectionHeader(
+      {required this.icon, required this.title, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: cs.primary),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const Spacer(),
+          if (trailing != null) trailing!,
+        ],
       ),
     );
   }

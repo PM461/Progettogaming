@@ -335,6 +335,29 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
     }
   }
 
+  Widget _smallRoundHoursButton(
+    BuildContext context, {
+    required String label, // "-10" o "+10"
+    VoidCallback? onTap,
+  }) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          shape: const CircleBorder(),
+          padding: EdgeInsets.zero,
+          elevation: 0,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+
   Widget _roundIconButton(BuildContext context,
       {required IconData icon, VoidCallback? onTap}) {
     return SizedBox(
@@ -574,6 +597,18 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      // -10 ore (cerchio piccolo)
+                                      _smallRoundHoursButton(
+                                        context,
+                                        label: '-10',
+                                        onTap: (!widget.readOnly &&
+                                                _minutes >= 600)
+                                            ? () => _incHours(-10)
+                                            : null,
+                                      ),
+                                      const SizedBox(width: 12),
+
+                                      // -1 ora (cerchio grande già esistente)
                                       _roundIconButton(
                                         context,
                                         icon: Icons.remove,
@@ -582,7 +617,10 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                                                 ? () => _incHours(-1)
                                                 : null,
                                       ),
+
                                       const SizedBox(width: 16),
+
+                                      // Etichetta ore
                                       Text(
                                         _hoursLabel,
                                         style: Theme.of(context)
@@ -591,7 +629,10 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                                             ?.copyWith(
                                                 fontWeight: FontWeight.w800),
                                       ),
+
                                       const SizedBox(width: 16),
+
+                                      // +1 ora (cerchio grande già esistente)
                                       _roundIconButton(
                                         context,
                                         icon: Icons.add,
@@ -599,8 +640,19 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
                                             ? () => _incHours(1)
                                             : null,
                                       ),
+                                      const SizedBox(width: 12),
+
+                                      // +10 ore (cerchio piccolo)
+                                      _smallRoundHoursButton(
+                                        context,
+                                        label: '+10',
+                                        onTap: !widget.readOnly
+                                            ? () => _incHours(10)
+                                            : null,
+                                      ),
                                     ],
                                   ),
+
                                   // sempre un po’ di aria tra i controlli e lo spinner
                                   const SizedBox(height: 12),
 // riserva sempre spazio fisso: niente reflow della sezione "Stato"

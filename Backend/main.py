@@ -14,7 +14,7 @@ import motor.motor_asyncio
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
-from routes.friends import router as friends_router, init_friend_indexes
+from routes.friends import router as friends_router, init_friend_indexes  
 
 user_games = db["user_games"]
 user_achievements = db["user_achievements"]
@@ -51,6 +51,7 @@ app.include_router(access.router)
 app.include_router(gestionegiochi.router)
 app.include_router(users.router, prefix="/api")
 app.include_router(friends_router)
+app.include_router(users.wishlist_router) 
 # middleware della sessione
 secret_key = os.getenv("SESSION_SECRET_KEY")
 if not secret_key:

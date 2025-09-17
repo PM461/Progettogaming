@@ -246,6 +246,79 @@ async def set_my_privacy(update: PrivacyUpdate, current=Depends(get_current_user
     )
     return {"is_private": bool(update.is_private)}
 
+# ---------- WISHLIST (dentro user_games.lists) ----------
+
+def _ensure_user_doc(user_obj_id: ObjectId):
+    doc = user_games_collection.find_one({"user_id": user_obj_id})
+    if not doc:
+        # Crea doc base se non esiste
+        user_games_collection.insert_one({"user_id": user_obj_id, "games": [], "lists": []})
+        doc = user_games_collection.find_one({"user_id": user_obj_id})
+    if "lists" not in doc:
+        doc["lists"] = []
+        user_games_collection.update_one({"user_id": user_obj_id}, {"$set": {"lists": []}})
+    return doc
+
+def _get_or_create_wishlist(user_doc: dict):
+    lists = user_doc.get("lists", [])
+    for lst in lists:
+        if lst.get("name") == "Wishlist":
+            return lst
+    # se non esiste, creala vuota
+    new_wl = {"name": "Wishlist", "game_ids": []}
+    lists.append(new_wl)
+    user_games_collection.update_one(
+        {"user_id": user_doc["user_id"]},
+        {"$set": {"lists": lists}}
+    )
+    return new_wl
+
+@router.get("/user/{user_id}/wishlist")
+def get_wishlist(user_id: str):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+    uid = ObjectId(user_id)
+    user_doc = _ensure_user_doc(uid)
+    wl = _get_or_create_wishlist(user_doc)
+    # garantisco stringhe
+    return {"name": "Wishlist", "game_ids": [str(g) for g in wl.get("game_ids", [])]}
+
+@router.post("/user/{user_id}/wishlist/add/{game_id}")
+def wishlist_add(user_id: str, game_id: str):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+    uid = ObjectId(user_id)
+    user_doc = _ensure_user_doc(uid)
+    lists = user_doc.get("lists", [])
+    wl = _get_or_create_wishlist(user_doc)
+
+    # aggiungi solo se non c'è già
+    if game_id not in wl["game_ids"]:
+        wl["game_ids"].append(game_id)
+        user_games_collection.update_one(
+            {"user_id": uid},
+            {"$set": {"lists": lists}}
+        )
+    return {"ok": True, "added": str(game_id)}
+
+@router.delete("/user/{user_id}/wishlist/remove/{game_id}")
+def wishlist_remove(user_id: str, game_id: str):
+    if not is_valid_objectid(user_id):
+        raise HTTPException(status_code=400, detail="User ID non valido")
+    uid = ObjectId(user_id)
+    user_doc = _ensure_user_doc(uid)
+    lists = user_doc.get("lists", [])
+    wl = _get_or_create_wishlist(user_doc)
+
+    if game_id in wl["game_ids"]:
+        wl["game_ids"].remove(game_id)
+        user_games_collection.update_one(
+            {"user_id": uid},
+            {"$set": {"lists": lists}}
+        )
+    return {"ok": True, "removed": str(game_id)}
+
+
 @router.get("/{user_id}/games")
 async def get_user_games(
     user_id: str,
@@ -365,7 +438,53 @@ async def patch_status(app_id: str, patch: StatusPatch, current=Depends(get_curr
     )
     return {"status": patch.status}
 
+user_lists = db["user_lists"]
+wishlist_router = APIRouter(prefix="/user", tags=["Wishlist"])
 
+def _oid(s: str) -> ObjectId:
+    try:
+        return ObjectId(s)
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid user_id")
+
+async def _ensure_wishlist(uid: ObjectId):
+    # crea il doc Wishlist se non esiste
+    await user_lists.update_one(
+        {"user_id": uid, "name": "Wishlist"},
+        {"$setOnInsert": {"user_id": uid, "name": "Wishlist", "game_ids": []}},
+        upsert=True,
+    )
+
+@wishlist_router.get("/{user_id}/wishlist")
+async def get_wishlist(user_id: str):
+    uid = _oid(user_id)
+    doc = await user_lists.find_one({"user_id": uid, "name": "Wishlist"}, {"_id": 0})
+    if not doc:
+        return {"name": "Wishlist", "game_ids": []}
+    # garantiamo stringhe
+    return {
+        "name": "Wishlist",
+        "game_ids": [str(g) for g in doc.get("game_ids", [])]
+    }
+
+@wishlist_router.post("/{user_id}/wishlist/add/{game_id}")
+async def wishlist_add(user_id: str, game_id: str):
+    uid = _oid(user_id)
+    await _ensure_wishlist(uid)
+    await user_lists.update_one(
+        {"user_id": uid, "name": "Wishlist"},
+        {"$addToSet": {"game_ids": str(game_id)}},
+    )
+    return {"ok": True, "added": str(game_id)}
+
+@wishlist_router.delete("/{user_id}/wishlist/remove/{game_id}")
+async def wishlist_remove(user_id: str, game_id: str):
+    uid = _oid(user_id)
+    await user_lists.update_one(
+        {"user_id": uid, "name": "Wishlist"},
+        {"$pull": {"game_ids": str(game_id)}},
+    )
+    return {"ok": True, "removed": str(game_id)}
 
 
 @router.get("/{user_id}/privacy", response_model=PrivacyStatus)
@@ -405,3 +524,42 @@ async def get_user_achievements(
             "icon": a.get("icon"),  # opzionale
         })
     return out
+
+
+# ---------- GIOCHI "BULK" PER ID (anche non in libreria) ----------
+@router.get("/games/by_ids")
+def get_games_by_ids(ids: str = Query(..., description="Lista di ID separati da virgola")):
+    id_list = [i.strip() for i in ids.split(",") if i.strip()]
+    if not id_list:
+        raise HTTPException(status_code=400, detail="ids vuoto")
+
+    cursor = games_collection.find({"_id": {"$in": id_list}})
+    out = []
+    for game_doc in cursor:
+        details = game_doc.get("details", {}) or {}
+        logo_img = details.get("logo image") or details.get("logo") \
+                   or "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
+
+        out.append({
+            # Mantengo lo stesso schema che usi in /user/{user_id}/games
+            "game_id": str(game_doc.get("_id")),
+            "label": game_doc.get("label", "Senza nome"),
+            "logo image": logo_img,
+            "achievements": [],  # niente progress utente qui
+
+            # Dettagli (stesse chiavi "italiane" del tuo endpoint esistente)
+            "editore": details.get("editore", "N/A"),
+            "genere": details.get("genere", "N/A"),
+            "sviluppatore": details.get("sviluppatore", "N/A"),
+            "serie": details.get("serie", "N/A"),
+            "piattaforma": details.get("piattaforma", []),
+            "modalità di gioco": details.get("modalità di gioco", "N/A"),
+            "dispositivo di ingresso": details.get("dispositivo di ingresso", "N/A"),
+            "data di pubblicazione": details.get("data di pubblicazione", "N/A"),
+            "distributore": details.get("distributore", []),
+            "sito web ufficiale": details.get("sito web ufficiale", "N/A"),
+            "classificazione USK": details.get("classificazione USK", "N/A"),
+            "identificativo Steam": details.get("identificativo Steam", "N/A"),
+            "identificativo GOG.com": details.get("identificativo GOG.com", "N/A"),
+        })
+    return {"games": out}

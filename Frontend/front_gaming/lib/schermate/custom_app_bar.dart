@@ -19,7 +19,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     super.key,
     required this.selectedImageName,
     this.notifCount, // opzionale
-    this.onBellTap,  // opzionale
+    this.onBellTap, // opzionale
   });
 
   @override
@@ -95,14 +95,16 @@ class _CustomAppBarState extends State<CustomAppBar> {
                   const Spacer(),
                   if (count > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '$count',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                 ],
@@ -112,7 +114,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 const ListTile(
                   leading: Icon(Icons.inbox_outlined),
                   title: Text('Nessuna nuova notifica'),
-                  subtitle: Text('Quando ricevi richieste d’amicizia o altre notifiche, le vedrai qui.'),
+                  subtitle: Text(
+                      'Quando ricevi richieste d’amicizia o altre notifiche, le vedrai qui.'),
                 )
               else
                 Column(
@@ -198,7 +201,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
               child: Container(
                 width: 10,
                 height: 10,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.red, shape: BoxShape.circle),
               ),
             ),
         ],
@@ -227,7 +231,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 child: Container(
                   width: 10,
                   height: 10,
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                      color: Colors.red, shape: BoxShape.circle),
                 ),
               ),
           ],
@@ -243,7 +248,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
     final isTablet = width > 600;
 
     return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Color.fromARGB(255, 26, 26, 26),
       elevation: 4,
       automaticallyImplyLeading: false,
       toolbarHeight: dimensione,
@@ -268,7 +273,9 @@ class _CustomAppBarState extends State<CustomAppBar> {
                       child: Image.asset(
                         _showGif
                             ? 'images/logow.gif'
-                            : (isTablet ? 'images/logoestesow.png' : 'images/logow.png'),
+                            : (isTablet
+                                ? 'images/logoestesow.png'
+                                : 'images/logow.png'),
                         key: ValueKey<bool>(_showGif),
                         fit: BoxFit.contain,
                       ),

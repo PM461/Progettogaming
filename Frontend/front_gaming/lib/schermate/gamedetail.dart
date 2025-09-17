@@ -14,6 +14,8 @@ class Gamedatascreen extends StatefulWidget {
   State<Gamedatascreen> createState() => _GamedatascreenState();
 }
 
+bool isInWishlist = false;
+
 class _GamedatascreenState extends State<Gamedatascreen> {
   late String gameId;
   bool isInLibrary = false;
@@ -37,6 +39,7 @@ class _GamedatascreenState extends State<Gamedatascreen> {
         });
 
         _checkLibraryStatus();
+        _checkWishlistStatus();
 
         // Prendi nome sviluppatore con fallback sicuro
         final details = widget.game['details'] as Map<String, dynamic>? ?? {};
@@ -53,6 +56,50 @@ class _GamedatascreenState extends State<Gamedatascreen> {
         }
       }
     });
+  }
+
+  Future<void> _checkWishlistStatus() async {
+    if (userId == null) return;
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    final url = Uri.parse('$apiBaseUrl/user/$userId/wishlist');
+
+    try {
+      final res = await http.get(url);
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body) as Map<String, dynamic>;
+        final List gameIds = (data['game_ids'] as List?) ?? [];
+        final present =
+            gameIds.map((e) => e.toString()).contains(gameId.toString());
+        if (mounted) setState(() => isInWishlist = present);
+      }
+    } catch (_) {/* ignore */}
+  }
+
+  Future<void> _toggleWishlist() async {
+    if (userId == null) return;
+    const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+    final url = isInWishlist
+        ? Uri.parse('$apiBaseUrl/user/$userId/wishlist/remove/$gameId')
+        : Uri.parse('$apiBaseUrl/user/$userId/wishlist/add/$gameId');
+
+    final res = isInWishlist ? await http.delete(url) : await http.post(url);
+
+    if (mounted) {
+      if (res.statusCode == 200) {
+        setState(() => isInWishlist = !isInWishlist);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(isInWishlist
+                  ? 'Aggiunto alla Wishlist'
+                  : 'Rimosso dalla Wishlist')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Errore operazione Wishlist')),
+        );
+      }
+    }
   }
 
   Future<void> _showAddToListDialog() async {
@@ -119,7 +166,8 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
                 Navigator.pop(context);
                 await _addGameToLibraryIfNeeded();
-                const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+                const String apiBaseUrl =
+                    String.fromEnvironment('API_BASE_URL');
                 final url = Uri.parse("$apiBaseUrl/user/$userId/create_list");
                 final response = await http.post(
                   url,
@@ -154,7 +202,6 @@ class _GamedatascreenState extends State<Gamedatascreen> {
 
   Future<void> _addGameToLibraryIfNeeded() async {
     if (!isInLibrary && userId != null) {
-
       const String apiBaseUrl = String.fromEnvironment('API_BASE_URL');
       final url = Uri.parse('$apiBaseUrl/user/$userId/add_game/$gameId');
       final response = await http.post(url);
@@ -435,11 +482,22 @@ class _GamedatascreenState extends State<Gamedatascreen> {
               ListTile(
                 leading: Icon(isInLibrary ? Icons.remove : Icons.library_add),
                 title: Text(isInLibrary
-                    ? "Rimuovi da libreria"
-                    : "Aggiungi a libreria"),
+                    ? "Rimuovi da Collezione"
+                    : "Aggiungi alla Collezione"),
                 onTap: () async {
                   Navigator.pop(context);
                   await _toggleGameInLibrary();
+                },
+              ),
+              ListTile(
+                leading:
+                    Icon(isInWishlist ? Icons.favorite : Icons.favorite_border),
+                title: Text(isInWishlist
+                    ? "Rimuovi da Wishlist"
+                    : "Aggiungi a Wishlist"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _toggleWishlist();
                 },
               ),
               ListTile(

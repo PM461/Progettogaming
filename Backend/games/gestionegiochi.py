@@ -480,16 +480,58 @@ def remove_game_from_list(user_id: str, list_name: str = Query(..., description=
 
 
 
-@router.get("/game/{game_id}")
-def get_game_by_id(game_id: str):
-    # Cerca il gioco nella collection
-    game = games_collection.find_one({"_id": game_id})
+@router.get("/games/by_ids")
+def get_games_by_ids(ids: str):
+    """
+    Ritorna i giochi (formato 'enriched' come /user/{user_id}/games) per una lista di ID separati da virgola.
+    Esempio: /games/by_ids?ids=Q170410,Q35627
+    """
+    if not ids:
+        return {"games": []}
 
-    if not game:
-        raise HTTPException(status_code=404, detail="Gioco non trovato")
+    id_list = [s.strip() for s in ids.split(",") if s.strip()]
+    cursor = games_collection.find({"_id": {"$in": id_list}})
 
-    # Converti ObjectId in stringa, se presente
-    if "_id" in game:
-        game["_id"] = str(game["_id"])
+    out = []
+    for doc in cursor:
+        details = doc.get("details", {}) or {}
+        logo = (
+            details.get("logo image")
+            or details.get("logo")
+            or "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
+        )
 
-    return game
+        # obiettivi dal catalogo (non sbloccati)
+        game_achs = details.get("obiettivi_steam") or doc.get("obiettivi_steam") or []
+        enriched_achievements = []
+        for ach in game_achs:
+            enriched_achievements.append({
+                "name": ach.get("name") or ach.get("displayName") or "Achievement",
+                "description": ach.get("description", "N/A"),
+                "icon": ach.get("icon"),
+                "icongray": ach.get("icongray"),
+                "achieved": False,
+            })
+
+        out.append({
+            "game_id": doc.get("_id"),
+            "label": doc.get("label", "Senza nome"),
+            "logo image": logo,
+            "achievements": enriched_achievements,
+            "editore": details.get("editore", "N/A"),
+            "genere": details.get("genere", "N/A"),
+            "sviluppatore": details.get("sviluppatore", "N/A"),
+            "serie": details.get("serie", "N/A"),
+            "piattaforma": details.get("piattaforma", []),
+            "modalità di gioco": details.get("modalità di gioco", "N/A"),
+            "dispositivo di ingresso": details.get("dispositivo di ingresso", "N/A"),
+            "data di pubblicazione": details.get("data di pubblicazione", "N/A"),
+            "distributore": details.get("distributore", []),
+            "sito web ufficiale": details.get("sito web ufficiale", "N/A"),
+            "classificazione USK": details.get("classificazione USK", "N/A"),
+            "identificativo Steam": details.get("identificativo Steam", "N/A"),
+            "identificativo GOG.com": details.get("identificativo GOG.com", "N/A"),
+        })
+
+    return {"games": out}
+
